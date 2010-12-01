@@ -380,11 +380,11 @@ else
 		if [ -z $2 ]; then
 			usage
 		else
-			VIRTUALHOST="${2}.local"
+			VIRTUALHOST="${2}"
 			DELETE=0
 		fi		
 	else
-		VIRTUALHOST="${1}.local"
+		VIRTUALHOST="${1}"
 	fi
 fi
 
@@ -567,7 +567,7 @@ if ! checkyesno ${SKIP_ETC_HOSTS}; then
 
 		/bin/echo "Creating a virtualhost for $VIRTUALHOST..."
 		/bin/echo -n "+ Adding $VIRTUALHOST to /etc/hosts... "
-		/bin/echo "$IP_ADDRESS	$1.local" >> /etc/hosts
+		/bin/echo "$IP_ADDRESS	$1" >> /etc/hosts
 		/bin/echo "done"
 	fi
 fi
