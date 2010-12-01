@@ -1,7 +1,6 @@
 #!/bin/sh
-# $Id: virtualhost.sh 34 2010-05-13 16:04:17Z patrickg.com $
 #================================================================================
-# virtualhost.sh                                                $Revision: 1.22 $
+# virtualhost.sh
 #
 # A fancy little script to setup a new virtualhost in Mac OS X.
 #
@@ -10,6 +9,13 @@
 # sudo ./virtualhost.sh --delete <site>
 #
 # where <site> is the site name you used when you first created the host.
+#
+# CHANGES SINCE v1.22
+# - Fix a bug when automatically rerunning script using sudo.
+#   (Issue #11 reported and fixed by Jake Smith <Jake.Smith92>)
+# - Fix a bug that prevented the document root from being deleted when a virtual
+#   host was deleted.
+#   (Issue #12 reported and fixed by Jake Smith <Jake.Smith92>)
 #
 # CHANGES SINCE v1.21
 # - It is now possible to use this script in environments like FreeBSD. Some 
@@ -97,14 +103,14 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.22"
+version="1.23"
 #
 
 # No point going any farther if we're not running correctly...
 if [ `whoami` != 'root' ]; then
 	echo "virtualhost.sh requires super-user privileges to work."
 	echo "Enter your password to continue..."
-	sudo $0 $1 || exit 1
+	sudo $0 $* || exit 1
 fi
 
 if [ -z "$SUDO_USER" ]; then
@@ -421,7 +427,7 @@ if [ ! -z $DELETE ]; then
 		/bin/echo "done"
 		
 		if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
-			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}'`
+			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
 
 			if [ -d $DOCUMENT_ROOT ]; then
 				/bin/echo -n "  + Found DocumentRoot $DOCUMENT_ROOT. Delete this folder? [y/N]: "
