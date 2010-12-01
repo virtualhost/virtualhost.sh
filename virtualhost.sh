@@ -298,12 +298,12 @@ version_check()
 		
 			case $resp in
 			y*|Y*)
-				$OPEN_COMMAND "http://code.google.com/p/virtualhost-sh/"
+				$OPEN_COMMAND "https://github.com/pgib/virtualhost.sh"
 				exit
 			;;
 			
 			*)
-				/bin/echo "Okay. At your convenience, visit: http://code.google.com/p/virtualhost-sh/"
+				/bin/echo "Okay. At your convenience, visit: https://github.com/pgib/virtualhost.sh"
 				/bin/echo
 			;;
 			esac
