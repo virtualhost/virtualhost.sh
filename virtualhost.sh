@@ -104,7 +104,7 @@ version="1.22"
 if [ `whoami` != 'root' ]; then
 	echo "virtualhost.sh requires super-user privileges to work."
 	echo "Enter your password to continue..."
-	sudo $0 $1 || exit 1
+	sudo $0 $* || exit 1
 fi
 
 if [ -z "$SUDO_USER" ]; then
@@ -116,7 +116,6 @@ elif [ $SUDO_USER = "root" ]; then
 	/bin/echo "Rerun using: sudo $0 $*"
 	exit 1
 fi
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If you are using this script on a production machine with a static IP address,
 # and you wish to setup a "live" virtualhost, you can change the following IP
@@ -224,7 +223,7 @@ create_virtualhost()
 			chown $USER "${log_folder_path}"
 		fi
 	fi
-	cat << __EOF >$APACHE_CONFIG/virtualhosts/$1
+	cat << __EOF >$APACHE_CONFIG/vhosts/$1
 # Created $date
 <VirtualHost *:80>
   DocumentRoot "$2"
@@ -240,7 +239,7 @@ create_virtualhost()
     Allow from all
   </Directory>
   
-  ${log}CustomLog "${access_log}" combined
+  ${log}CustomLog "${access_log}" common
   ${log}ErrorLog "${error_log}"
   
 </VirtualHost>
@@ -381,11 +380,11 @@ else
 		if [ -z $2 ]; then
 			usage
 		else
-			VIRTUALHOST=$2
+			VIRTUALHOST="${2}.local"
 			DELETE=0
 		fi		
 	else
-		VIRTUALHOST=$1
+		VIRTUALHOST="${1}.local"
 	fi
 fi
 
@@ -420,8 +419,9 @@ if [ ! -z $DELETE ]; then
 
 		/bin/echo "done"
 		
-		if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
-			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}'`
+		if [ -e $APACHE_CONFIG/vhosts/$VIRTUALHOST.conf ]; then
+			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/vhosts/$VIRTUALHOST.conf | awk '{print $2}' | tr -d '"'`
+			/bin/echo "$DOC_ROOT_PREFIX/$VIRTUALHOST | $DOCUMENT_ROOT"
 
 			if [ -d $DOCUMENT_ROOT ]; then
 				/bin/echo -n "  + Found DocumentRoot $DOCUMENT_ROOT. Delete this folder? [y/N]: "
@@ -440,8 +440,8 @@ if [ ! -z $DELETE ]; then
 				esac
 			fi
 				
-			/bin/echo -n "  - Deleting virtualhost file... ($APACHE_CONFIG/virtualhosts/$VIRTUALHOST) "
-			rm $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
+			/bin/echo -n "  - Deleting virtualhost file... ($APACHE_CONFIG/vhosts/$VIRTUALHOST.conf) "
+			rm $APACHE_CONFIG/vhosts/$VIRTUALHOST.conf
 			/bin/echo "done"
 
 			/bin/echo -n "+ Restarting Apache... "
@@ -502,12 +502,12 @@ if ! grep -q -E "^NameVirtualHost \*:80" $APACHE_CONFIG/httpd.conf ; then
 	cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
 	/bin/echo "NameVirtualHost *:80" >> $APACHE_CONFIG/httpd.conf
 	
-	if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
-		mkdir $APACHE_CONFIG/virtualhosts
+	if [ ! -d $APACHE_CONFIG/vhosts ]; then
+		mkdir $APACHE_CONFIG/vhosts
 		create_virtualhost localhost $DOC_ROOT_PREFIX
 	fi
 
-	/bin/echo "Include $APACHE_CONFIG/virtualhosts"  >> $APACHE_CONFIG/httpd.conf
+	/bin/echo "Include $APACHE_CONFIG/vhosts"  >> $APACHE_CONFIG/httpd.conf
 
 
 fi
@@ -567,7 +567,7 @@ if ! checkyesno ${SKIP_ETC_HOSTS}; then
 
 		/bin/echo "Creating a virtualhost for $VIRTUALHOST..."
 		/bin/echo -n "+ Adding $VIRTUALHOST to /etc/hosts... "
-		/bin/echo "$IP_ADDRESS	$1" >> /etc/hosts
+		/bin/echo "$IP_ADDRESS	$1.local" >> /etc/hosts
 		/bin/echo "done"
 	fi
 fi
@@ -776,7 +776,7 @@ fi
 # Create a default virtualhost file
 #
 /bin/echo -n "+ Creating virtualhost file... "
-create_virtualhost $VIRTUALHOST "${DOC_ROOT_PREFIX}/${FOLDER}" $log
+create_virtualhost $VIRTUALHOST.conf "${DOC_ROOT_PREFIX}/${FOLDER}" $log
 /bin/echo "done"
 
 
