@@ -530,7 +530,7 @@ if [ -d /etc/httpd/virtualhosts ]; then
 			/bin/echo -n "  + Creating $host... "
 			if ! checkyesno ${SKIP_ETC_HOSTS}; then
 				if ! host_exists $host ; then
-					/bin/echo "$IP_ADDRESS	$host" >> /etc/hosts
+					/bin/echo "\n$IP_ADDRESS	$host" >> /etc/hosts
 				fi
 			fi
 			docroot=`grep DocumentRoot /etc/httpd/virtualhosts/$host | awk '{print $2}'`
