@@ -1,340 +1,71 @@
 #!/bin/sh
 #================================================================================
-# virtualhost.sh
+# virtualhost.sh                                                            
 #
-# A fancy little script to setup a new virtualhost in Mac OS X.
+# A fancy little script to setup a new virtualhost in Ubuntu based upon the  
+# excellent virtualhost (V1.04) script by Patrick Gibson <patrick@patrickg.com> for OS X.
 #
-# If you want to delete a virtualhost that you've created, you need to:
+# This script has been tested on Ubuntu 7.10 (Gutsy Gibbon) with Apache2(!) and 
+# probably works on Debian as well, but this has not been tested (yet). If you use 
+# this script on other Linux distributions and can confirm it to work I would like to hear
+# from you. Just send an email to Bjorn Wijers <burobjorn@burobjorn.nl> with more info
 #
-# sudo ./virtualhost.sh --delete <site>
+# USAGE:
+# 
+# CREATE A VIRTUAL HOST:
+# sudo ./virtualhost <name>
+# where <name> is the one-word name you'd like to use. (e.g. mysite)
+#   
+# Note that if "virtualhost.sh" is not in your PATH, you will have to write
+# out the full path to where you've placed: eg. /usr/bin/virtualhost.sh <name>
+# 
+# REMOVE A VIRTUAL HOST:
+# sudo ./virtualhost --delete <site>
 #
-# where <site> is the site name you used when you first created the host.
-#
-# CHANGES SINCE v1.22
-# - Fix a bug when automatically rerunning script using sudo.
-#   (Issue #11 reported and fixed by Jake Smith <Jake.Smith92>)
-# - Fix a bug that prevented the document root from being deleted when a virtual
-#   host was deleted.
-#   (Issue #12 reported and fixed by Jake Smith <Jake.Smith92>)
-#
-# CHANGES SINCE v1.21
-# - It is now possible to use this script in environments like FreeBSD. Some 
-#   new configuration variables support this such as SKIP_ETC_HOSTS,
-#   HOME_PARTITION, and SKIP_DOCUMENT_ROOT_CHECK.
-# - If you're doing Ruby on Rails, Merb, and other Rack-based development,
-#   the script looks for a public folder in your document root, and will
-#   optionally use that (assuming the use of Phusion Passenger:
-#   <http://modrails.com/>)
-# - Support spaces in your document root. (Issue #10 by ryanilg.creative)
-# - If you forget to run with sudo, you no longer have to re-run.
-#
-# CHANGES SINCE v1.20
-# - virtualhost.sh now checks to see if a newer version is available! Amazing!
-#
-# CHANGES SINCE v1.19
-# - [Issue #7] You can now have site-specific logs for each virtual host. See
-#   the configuration variables PROMPT_FOR_LOGS and ALWAYS_CREATE_LOGS for
-#   additional controls.
-#
-# CHANGES SINCE v1.18
-# - [Issue #1] On Leopard, the first request to the new virtual host would fail.
-#   Have remedied this by making the first request in the script, in addition to
-#   the sleep 1 command.
-# - [Issue #4] Some users reported an error originating from a missing group. 
-#   Looks like Leopard doesn't create a group with the same name as the user like
-#   previous versions (and most other Unix-variants!) do. It was never a problem
-#   for me because my user account was created on Mac OS X 10.0, and has been
-#   migrated from machine to machine and with every upgrade, and my "patrick"
-#   group has remained. (Thanks to Matt Sephton for reporting and providing a
-#   patch!)
-#
-# CHANGES SINCE v1.17
-# - [Issue #2] Add a new option $OPEN_COMMAND to specify which app should be
-#   used when launching the virtual host. See below for examples.
-# - [Issue #3] Make sure sudo is used to run the command so that we know the
-#   actual user's user name.
-#
-# CHANGES SINCE v1.16
-# - You can now store any configuration values in ~/.virtualhost.sh.conf.
-#   This way, you can update the script without losing your settings.
-#
-# CHANGES SINCE v1.15
-# - Add feature to support a ServerAlias using a wildcard DNS host. See the
-#   Wiki at http://code.google.com/p/virtualhost-sh/wiki/Wildcard_Hosts
-#
-# CHANGES SINCE v1.14
-# - Fix a bug in host_exists() that caused it never to work (thanks to Daniel
-#   Jewett for finding that).
-#
-# CHANGES SINCE v1.13
-# - Fix check in /etc/hosts to better match the supplied virtualhost.
-# - Fix check for existing folder in your Sites folder.
-#
-# CHANGES SINCE v1.05
-# - Support for Leopard. In fact, this version only supports Leopard, and 1.05
-#   will be the last version for Tiger and below.
-#
-# CHANGES SINCE v1.04
-# - The $APACHECTL variable wasn't been used. (Thanks to Thomas of webtypes.com)
-#
-# CHANGES SINCE v1.03
-# - An oversight in the change in v1.03 caused the ownership to be incorrect for
-#   a tree of folders that was created. If your site folder is a few levels deep
-#   we now fix the ownership properly of each nested folder.  (Thanks again to
-#   Michael Allan for pointing this out.)
-#
-# - Improved the confirmation page for when you create a new virtual host. Not
-#   only is it more informative, but it is also much more attractive.
-#
-# CHANGES SINCE v1.02
-# - When creating the website folder, we now create all the intermediate folders
-#   in the case where a user sets their folder to something like 
-#   clients/project_a/mysite. (Thanks to Michael Allan for pointing this out.)
-#
-# CHANGES SINCE v1.01
-# - Allow for the configuration of the Apache configuration path and the path to
-#   apachectl.
-#
-# CHANGES SINCE v1.0
-# - Use absolute path to apachectl, as it looks like systems that were upgraded
-#   from Jaguar to Panther don't seem to have it in the PATH.
+# where <site> is the site name you used when you first created the host. 
 #
 #
-# by Patrick Gibson <patrick@patrickg.com>
-#================================================================================
-# Don't change this!
-version="1.23"
+#======= SCRIPT VARIABLES ======== 
 #
-
-# No point going any farther if we're not running correctly...
-if [ `whoami` != 'root' ]; then
-	echo "virtualhost.sh requires super-user privileges to work."
-	echo "Enter your password to continue..."
-	sudo $0 $* || exit 1
-fi
-
-if [ -z "$SUDO_USER" ]; then
-	/bin/echo "You must start this under your regular user account using sudo."
-	/bin/echo "Rerun using: sudo $0 $*"
-	exit 1
-elif [ $SUDO_USER = "root" ]; then
-	/bin/echo "You must start this under your regular user account (not root) using sudo."
-	/bin/echo "Rerun using: sudo $0 $*"
-	exit 1
-fi
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If you are using this script on a production machine with a static IP address,
 # and you wish to setup a "live" virtualhost, you can change the following IP
 # address to the IP address of your machine.
 #
-IP_ADDRESS="127.0.0.1"
-
-# By default, this script places files in /Users/[you]/Sites. If you would like
-# to change this, like to how Apple does things by default, uncomment the
+	IP_ADDRESS="127.0.0.1"
+#
+# By default, this script places files in /home/[you]/Sites. If you would like
+# to change this, like to how Apache on Ubuntu does things by default, uncomment the
 # following line:
 #
-#DOC_ROOT_PREFIX="/Library/WebServer/Documents"
-
-# Configure the apache-related paths
+#DOC_ROOT_PREFIX="/var/www"
 #
-APACHE_CONFIG="/private/etc/apache2"
-APACHECTL="/usr/sbin/apachectl"
+# Configure the apache-related paths if these defaults do not work for you.
+#
+	APACHE_CONFIG_FILENAME="apache2.conf"
+	APACHE_CONFIG="/etc/apache2"
+	APACHECTL="/usr/sbin/apache2ctl"
+#
+# Set the virtual host configuration directory
+	APACHE_VIRTUAL_HOSTS_ENABLED="sites-enabled"
+	APACHE_VIRTUAL_HOSTS_AVAILABLE="sites-available"
+#
+# Set the browser to use, in GNOME you can use gnome-open to use the system default browser, but I prefer to call Firefox directly
+# At the moment this causes Firefox to issue a warning. If you know how to solve this feel free to contact me
+#
+	DEFAULT_BROWSER="/usr/bin/firefox -new-tab" 
+#
+# By default, use the site folders that get created will be 0wn3d by this group
+	OWNER_GROUP="www-data"
+#
+#
+#======= DO NOT EDIT BELOW THIS lINE UNLESS YOU KNOW WHAT YOU ARE DOING ======== 
 
-# If you wish to change the default application that gets launched after the
-# virtual host is created, define it here:
-#OPEN_COMMAND="/usr/bin/open -a /Applications/Firefox.app"
-#OPEN_COMMAND="/usr/bin/open -a /Applications/WebKit.app"
-OPEN_COMMAND="/usr/bin/open"
+if [ `whoami` != 'root' ]; then
 
-# If defined, a ServerAlias os $1.$WILDCARD_ZONE will be added to the virtual
-# host file. This is useful if you, for example, have setup a wildcard domain
-# either on your own DNS server or using a server like dyndns.org. For example,
-# if my local IP of 10.0.42.42 is static (which can still be achieved using a
-# well-configured DHCP server or an Apple Airport Extreme 802.11n base station)
-# and I create a host on dyndns.org of patrickdev.dyndns.org with wildcard
-# hostnames turned on, then defining my WILDCARD_ZONE to "patrickdev.dyndns.org"
-# will enable access to my virtual host from any machine on the network. Note
-# that this would also work with a public IP too, and the virtual hosts on your
-# machine would be accessible to anyone on the internets.
-#WILDCARD_ZONE="my.wildcard.host.address"
-
-# A feature to specify a custom log location within your site's document root
-# was requested, and so you will be prompted about this when you create a new
-# virtual host. If you do not want to be prompted, set the following to "no":
-PROMPT_FOR_LOGS="no"
-
-# If you do not want to be prompted, but you do always want to have the site-
-# specific logs folder, set PROMPT_FOR_LOGS="no" and enable this:
-ALWAYS_CREATE_LOGS="yes"
-
-# By default, log files will be created in DOCUMENT_ROOT/logs. If you wish to
-# override this to a static location, you can do so here.
-#LOG_FOLDER="/var/log/httpd"
-
-# If you have an atypical setup, and you don't need or want entries in your
-# /etc/hosts file, you can set the following option to "yes".
-SKIP_ETC_HOSTS="no"
-
-# If you are running this script on a platform other than Mac OS X, your home
-# partition is going to be different. If so, change it here.
-HOME_PARTITION="/Users"
-
-# If your environment has a different default DocumentRoot, and you don't want
-# to be nagged about "fixing" your DocumentRoot, set this to "yes".
-SKIP_DOCUMENT_ROOT_CHECK="no"
-
-# You can now store your configuration directions in a ~/.virtualhost.sh.conf
-# file so that you can download new versions of the script without having to
-# redo your own settings.
-if [ -e ~/.virtualhost.sh.conf ]; then
-	. ~/.virtualhost.sh.conf
-fi
-
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-host_exists()
-{
-	if grep -q -e "^$IP_ADDRESS	$1$" /etc/hosts ; then
-		return 0
-	else
-		return 1
-	fi
-}
-
-create_virtualhost()
-{
-	if [ ! -z $WILDCARD_ZONE ]; then
-		SERVER_ALIAS="ServerAlias $1.$WILDCARD_ZONE"
-	else
-		SERVER_ALIAS="#ServerAlias your.alias.here"
-	fi
-	date=`/bin/date`
-	if [ -z $3 ]; then
-		log="#"
-	else
-		log=""
-		if [ ! -z $LOG_FOLDER ]; then
-			log_folder_path=$LOG_FOLDER
-			access_log="${log_folder_path}/access_log-$1"
-			error_log="${log_folder_path}/error_log-$1"
-		else
-			log_folder_path=$DOC_ROOT_PREFIX/$FOLDER/logs
-			access_log="${log_folder_path}/access_log"
-			error_log="${log_folder_path}/error_log"
-		fi
-		if [ ! -d "${log_folder_path}" ]; then
-			mkdir -p "${log_folder_path}"
-			chown $USER "${log_folder_path}"
-		fi
-	fi
-	cat << __EOF >$APACHE_CONFIG/virtualhosts/$1
-# Created $date
-<VirtualHost *:80>
-  DocumentRoot "$2"
-  ServerName $1
-  $SERVER_ALIAS
-
-  ScriptAlias /cgi-bin "$2/cgi-bin"
-
-  <Directory "$2">
-    Options All
-    AllowOverride All
-    Order allow,deny
-    Allow from all
-  </Directory>
-  
-  ${log}CustomLog "${access_log}" combined
-  ${log}ErrorLog "${error_log}"
-  
-</VirtualHost>
-__EOF
-}
-
-cleanup()
-{
-	/bin/echo
-	/bin/echo "Cleaning up..."
+	echo "You must be running with root privileges to run this script."
 	exit
-}
 
-# Based on FreeBSD's /etc/rc.subr
-checkyesno()
-{
-	case $1 in
-		#       "yes", "true", "on", or "1"
-		[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]|[Oo][Nn]|[Yy]|1)
-		return 0
-		;;
-
-		#       "no", "false", "off", or "0"
-		[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]|[Oo][Ff][Ff]|[Nn]|0)
-		return 1
-		;;
-		
-		*)
-		return 1
-		;;
-	esac
-}
-
-version_check()
-{
-	/bin/echo -n "Checking for updates... "
-	current_version=`dig +tries=1 +time=1 +retry=0 txt virtualhost.patrickgibson.com | grep -e '^virtualhost' | awk '{print $5}' | sed -e 's/"//g'`
-	
-	# See if we have the latest version
-	if [ -n "$current_version" ]; then
-		testes=`/bin/echo "$version < $current_version" | /usr/bin/bc`
-	
-		if [ $testes -eq 1 ]; then
-			/bin/echo "done"
-			/bin/echo "A newer version ($current_version) of virtualhost.sh is available."
-			/bin/echo -n "Do you want to get it now? [Y/n] "
-	
-			read resp
-		
-			case $resp in
-			y*|Y*)
-				$OPEN_COMMAND "https://github.com/pgib/virtualhost.sh"
-				exit
-			;;
-			
-			*)
-				/bin/echo "Okay. At your convenience, visit: https://github.com/pgib/virtualhost.sh"
-				/bin/echo
-			;;
-			esac
-		else
-			/bin/echo "none found"
-		fi
-	else
-		/bin/echo "failed. Are you online?"
-	fi
-}
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-# Make sure this is an Apache 2.x / Leopard machine
-if [ ! -d $APACHE_CONFIG ]; then
-	/bin/echo "Could not find ${APACHE_CONFIG}"
-	/bin/echo "Sorry, this version of virtualhost.sh only works with Leopard. You can download an older version which works with previous versions of Mac OS X here:"
-	/bin/echo
-	/bin/echo "http://patrickgibson.com/news/andsuch/virtualhost.tgz"
-	/bin/echo
-	
-	exit 1
 fi
-
-version_check
-
-# catch Ctrl-C
-#trap 'cleanup' 2
-
-# restore it
-#trap '' 2
 
 if [ -z $USER -o $USER = "root" ]; then
 	if [ ! -z $SUDO_USER ]; then
@@ -342,17 +73,17 @@ if [ -z $USER -o $USER = "root" ]; then
 	else
 		USER=""
 
-		/bin/echo "ALERT! Your root shell did not provide your username."
+		echo "ALERT! Your root shell did not provide your username."
 
 		while : ; do
 			if [ -z $USER ]; then
 				while : ; do
-					/bin/echo -n "Please enter *your* username: "
+					echo -n "Please enter *your* username: "
 					read USER
-					if [ -d $HOME_PARTITION/$USER ]; then
+					if [ -d /Users/$USER ]; then
 						break
 					else
-						/bin/echo "$USER is not a valid username."
+						echo "$USER is not a valid username."
 					fi
 				done
 			else
@@ -363,7 +94,7 @@ if [ -z $USER -o $USER = "root" ]; then
 fi
 
 if [ -z $DOC_ROOT_PREFIX ]; then
-	DOC_ROOT_PREFIX="${HOME_PARTITION}/$USER/Sites"
+	DOC_ROOT_PREFIX="/home/$USER/Sites"
 fi
 
 usage()
@@ -395,17 +126,11 @@ else
 	fi
 fi
 
-# Test that the virtualhost name is valid (starts with a number or letter)
-if ! /bin/echo $VIRTUALHOST | grep -q -E '^[A-Za-z0-9]+' ; then
-	/bin/echo "Sorry, '$VIRTUALHOST' is not a valid host name to use. It must start with a letter or number."
-	exit 1
-fi
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Delete the virtualhost if that's the requested action
 #
 if [ ! -z $DELETE ]; then
-	/bin/echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
+	echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
 
 	read continue
 	
@@ -413,78 +138,90 @@ if [ ! -z $DELETE ]; then
 	n*|N*) exit
 	esac
 
-	if host_exists $VIRTUALHOST ; then
-		if ! checkyesno ${SKIP_ETC_HOSTS}; then
-			/bin/echo -n "  - Removing $VIRTUALHOST from /etc/hosts... "
-					
-			cat /etc/hosts | grep -v $VIRTUALHOST > /tmp/hosts.tmp
+	if grep -q -E "$VIRTUALHOST$" /etc/hosts ; then
+		echo "  - Removing $VIRTUALHOST from /etc/hosts..."
+		echo -n "  * Backing up current /etc/hosts as /etc/hosts.original..."
+		cp /etc/hosts /etc/hosts.original	
+		sed "/$IP_ADDRESS\t$VIRTUALHOST/d" /etc/hosts > /etc/hosts2
+		mv -f /etc/hosts2 /etc/hosts
+		echo "done"
 		
-			if [ -s /tmp/hosts.tmp ]; then
-				mv /tmp/hosts.tmp /etc/hosts
-			fi
-		fi
-
-		/bin/echo "done"
-		
-		if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
-			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
+		if [ -e $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_ENABLED/$VIRTUALHOST ]; then
+			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_ENABLED/$VIRTUALHOST | awk '{print $2}'`
 
 			if [ -d $DOCUMENT_ROOT ]; then
-				/bin/echo -n "  + Found DocumentRoot $DOCUMENT_ROOT. Delete this folder? [y/N]: "
+				echo -n "  + Found DocumentRoot $DOCUMENT_ROOT. Delete this folder? [y/N]: "
 
 				read resp
 			
 				case $resp in
 				y*|Y*)
-					/bin/echo -n "  - Deleting folder... "
-					if rm -rf "${DOCUMENT_ROOT}" ; then
-						/bin/echo "done"
+					echo -n "  - Deleting folder... "
+					if rm -rf $DOCUMENT_ROOT ; then
+						echo "done"
 					else
-						/bin/echo "Could not delete $DOCUMENT_ROOT"
+						echo "Could not delete $DOCUMENT_ROOT"
 					fi
 				;;
 				esac
-			fi
 				
-			/bin/echo -n "  - Deleting virtualhost file... ($APACHE_CONFIG/virtualhosts/$VIRTUALHOST) "
-			rm $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
-			/bin/echo "done"
+				echo -n "  - Deleting virtualhost file... ($APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_ENABLED/$VIRTUALHOST) and ($APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/$VIRTUALHOST) "
+				/usr/sbin/a2dissite $VIRTUALHOST 1>/dev/null 2>/dev/null
+				rm $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/$VIRTUALHOST
+				echo "done"
 
-			/bin/echo -n "+ Restarting Apache... "
-			$APACHECTL graceful 1>/dev/null 2>/dev/null
-			/bin/echo "done"
+				echo -n "+ Restarting Apache... "
+				## /usr/sbin/apachectl graceful 1>/dev/null 2>/dev/null
+				$APACHECTL graceful 1>/dev/null 2>/dev/null
+				echo "done"
+			fi
 		fi
 	else
-		/bin/echo "- Virtualhost $VIRTUALHOST does not currently exist. Aborting..."
+		echo "- Virtualhost $VIRTUALHOST does not currently exist. Aborting..."
 	fi
 
 	exit
 fi
 
 
+FIRSTNAME=`finger | awk '{print $2}' | tail -n 1`
+cat << __EOT
+Hi $FIRSTNAME! Welcome to virtualhost.sh. This script will guide you through setting
+up a name-based virtualhost. 
+
+__EOT
+
+echo -n "Do you wish to continue? [Y/n]: "
+
+read continue
+
+case $continue in
+n*|N*) exit
+esac
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Make sure $APACHE_CONFIG/httpd.conf is ready for virtual hosting...
+# Make sure $APACHE_CONFIG/$APACHE_CONFIG_FILENAME is ready for virtual hosting...
 #
 # If it's not, we will:
 #
-# a) Backup the original to $APACHE_CONFIG/httpd.conf.original
+# a) Backup the original to $APACHE_CONFIG/$APACHE_CONFIG_FILENAME.original
 # b) Add a NameVirtualHost 127.0.0.1 line
 # c) Create $APACHE_CONFIG/virtualhosts/ (virtualhost definition files reside here)
 # d) Add a line to include all files in $APACHE_CONFIG/virtualhosts/
 # e) Create a _localhost file for the default "localhost" virtualhost
 #
 
-if ! checkyesno ${SKIP_DOCUMENT_ROOT_CHECK} ; then
-	if ! grep -q -e "^DocumentRoot \"$DOC_ROOT_PREFIX\"" $APACHE_CONFIG/httpd.conf ; then
-		/bin/echo "httpd.conf's DocumentRoot does not point where it should."
-		/bin/echo -n "Do you with to set it to $DOC_ROOT_PREFIX? [Y/n]: "	
-		read DOCUMENT_ROOT
-		case $DOCUMENT_ROOT in
-		n*|N*)
-			/bin/echo "Okay, just re-run this script if you change your mind."
-		;;
-		*)
-			cat << __EOT | ed $APACHE_CONFIG/httpd.conf 1>/dev/null 2>/dev/null
+if ! grep -q -e "^DocumentRoot \"$DOC_ROOT_PREFIX\"" $APACHE_CONFIG/$APACHE_CONFIG_FILENAME ; then
+	echo "The DocumentRoot in $APACHE_CONFIG_FILENAME does not point where it should."
+	echo -n "Do you want to set it to $DOC_ROOT_PREFIX? [Y/n]: "	
+	read DOCUMENT_ROOT
+	case $DOCUMENT_ROOT in
+	n*|N*)
+		echo "Okay, just re-run this script if you change your mind."
+	;;
+	*)
+		cat << __EOT | ed $APACHE_CONFIG/$APACHE_CONFIG_FILENAME 1>/dev/null 2>/dev/null
 /^DocumentRoot
 i
 #
@@ -497,108 +234,92 @@ DocumentRoot "$DOC_ROOT_PREFIX"
 w
 q
 __EOT
-		;;
-		esac
-	fi
+	;;
+	esac
 fi
 
-if ! grep -q -E "^NameVirtualHost \*:80" $APACHE_CONFIG/httpd.conf ; then
+if ! grep -q -E "^NameVirtualHost $IP_ADDRESS" $APACHE_CONFIG/$APACHE_CONFIG_FILENAME ; then
 
-	/bin/echo "httpd.conf not ready for virtual hosting. Fixing..."
-	cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
-	/bin/echo "NameVirtualHost *:80" >> $APACHE_CONFIG/httpd.conf
+	echo "$APACHE_CONFIG_FILENAME not ready for virtual hosting. Fixing..."
+	cp $APACHE_CONFIG/$APACHE_CONFIG_FILENAME $APACHE_CONFIG/$APACHE_CONFIG_FILENAME.original
+	echo "NameVirtualHost $IP_ADDRESS" >> $APACHE_CONFIG/$APACHE_CONFIG_FILENAME
 	
-	if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
-		mkdir $APACHE_CONFIG/virtualhosts
-		create_virtualhost localhost $DOC_ROOT_PREFIX
+	if [ ! -d $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE ]; then
+		mkdir $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE
+		cat << __EOT > $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/_localhost
+<VirtualHost $IP_ADDRESS>
+  DocumentRoot $DOC_ROOT_PREFIX
+  ServerName localhost
+
+  ScriptAlias /cgi-bin $DOC_ROOT_PREFIX/cgi-bin
+
+  <Directory $DOC_ROOT_PREFIX>
+    Options All
+    AllowOverride All
+  </Directory>
+</VirtualHost>
+__EOT
+		if [ ! -d $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_ENABLED ]; then
+			mkdir $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_ENABLED
+		fi	
 	fi
 
-	/bin/echo "Include $APACHE_CONFIG/virtualhosts"  >> $APACHE_CONFIG/httpd.conf
-
-
+	echo "Include /$APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_ENABLED"  >> $APACHE_CONFIG/$APACHE_CONFIG_FILENAME
 fi
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Look for hosts created in Tiger
+# If the virtualhost is not already defined in /etc/hosts, define it...
 #
-if [ -d /etc/httpd/virtualhosts ]; then
+if grep -q -E "^$VIRTUALHOST" /etc/hosts ; then
 
-	/bin/echo -n "Do you want to port the hosts you previously created in Tiger to the new system? [Y/n]: "
-	read PORT_HOSTS
-	case $PORT_HOSTS in
-	n*|N*)
-		/bin/echo "Okay, just re-run this script if you change your mind."
-	;;
+	echo "- $VIRTUALHOST already exists."
+	echo -n "Do you want to replace this configuration? [Y/n] "
+	read resp
 
-	*)
-		for host in `ls -1 /etc/httpd/virtualhosts | grep -v _localhost`; do
-			/bin/echo -n "  + Creating $host... "
-			if ! checkyesno ${SKIP_ETC_HOSTS}; then
-				if ! host_exists $host ; then
-					/bin/echo "$IP_ADDRESS	$host" >> /etc/hosts
-				fi
-			fi
-			docroot=`grep DocumentRoot /etc/httpd/virtualhosts/$host | awk '{print $2}'`
-			create_virtualhost $host $docroot
-			/bin/echo "done"
-		done
-		
-		mv /etc/httpd/virtualhosts /etc/httpd/virtualhosts-ported
+	case $resp in
+	n*|N*)	exit
 	;;
 	esac
 
-
-fi
-
-if [ -z $WILDCARD_ZONE ]; then
-	/bin/echo -n "Create http://${VIRTUALHOST}/? [Y/n]: "
 else
-	/bin/echo -n "Create http://${VIRTUALHOST}.${WILDCARD_ZONE}/? [Y/n]: "
-fi
+	if [ $IP_ADDRESS != "127.0.0.1" ]; then
+		cat << _EOT
+We would now normally add an entry in your /etc/hosts so that
+you can access this virtualhost using a name rather than a number.
+However, since you have set the virtualhost to something other than
+127.0.0.1, this may not be necessary. (ie. there may already be a DNS
+record pointing to this IP)
 
-read continue
+_EOT
+		echo -n "Do you want to add this anyway? [y/N] "
+		read add_net_info
 
-case $continue in
-n*|N*) exit
-esac
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# If the host is not already defined in /etc/hosts, define it...
-#
-
-if ! checkyesno ${SKIP_ETC_HOSTS}; then
-	if ! host_exists $VIRTUALHOST ; then
-
-		/bin/echo "Creating a virtualhost for $VIRTUALHOST..."
-		/bin/echo -n "+ Adding $VIRTUALHOST to /etc/hosts... "
-		/bin/echo "$IP_ADDRESS	$1" >> /etc/hosts
-		/bin/echo "done"
+		case $add_net_info in
+		y*|Y*)	exit
+		;;
+		esac
 	fi
+	echo 
+	echo "Creating a virtualhost for $VIRTUALHOST..."
+	echo -n "+ Adding $VIRTUALHOST to /etc/host... "
+	echo "$IP_ADDRESS\t$VIRTUALHOST" >> /etc/hosts  
+	echo "done"
 fi
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Ask the user where they would like to put the files for this virtual host
 #
-/bin/echo -n "+ Checking for $DOC_ROOT_PREFIX/$VIRTUALHOST... "
+echo -n "+ Checking for $DOC_ROOT_PREFIX/$VIRTUALHOST... "
 
-cd $DOC_ROOT_PREFIX
-
-if [ ! -d $VIRTUALHOST ]; then
-	/bin/echo "not found"
+if [ ! -d $DOC_ROOT_PREFIX/$VIRTUALHOST ]; then
+	echo "not found"
 else
-	/bin/echo "found"
+	echo "found"
 fi
 	
-# See if we can find an appropriate folder
-if ls -1 $DOC_ROOT_PREFIX | grep -q -e ^$VIRTUALHOST; then
-	DOC_ROOT_FOLDER_MATCH=`ls -1 $DOC_ROOT_PREFIX | grep -e ^$VIRTUALHOST | head -n 1`
-	/bin/echo -n "  - Use $DOC_ROOT_PREFIX/$DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
-else
-	/bin/echo -n "  - Use $DOC_ROOT_PREFIX/$VIRTUALHOST as the virtualhost folder? [Y/n] "
-fi
+echo -n "  - Use $DOC_ROOT_PREFIX/$VIRTUALHOST as the virtualhost folder? [Y/n] "
 
 read resp
 
@@ -606,8 +327,8 @@ case $resp in
 
 	n*|N*) 
 		while : ; do
-			if [ -z "$FOLDER" ]; then
-				/bin/echo -n "  - Enter new folder name (located in Sites): "
+			if [ -z $FOLDER ]; then
+				echo -n "  - Enter new folder name (located in Sites): "
 				read FOLDER
 			else
 				break
@@ -615,43 +336,16 @@ case $resp in
 		done
 	;;
 
-	*)
-		if [ -z $DOC_ROOT_FOLDER_MATCH ]; then
-			if [ -d "$VIRTUALHOST" ]; then
-				if [ -d $VIRTUALHOST/public ]; then
-					/bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
-					read response
-					if checkyesno ${response} ; then
-						FOLDER=$VIRTUALHOST/public
-					else
-						FOLDER=$VIRTUALHOST
-					fi
-				fi
-			else
-				FOLDER=$VIRTUALHOST
-			fi
-		else
-			if [ -d "$DOC_ROOT_FOLDER_MATCH/public" ]; then
-				/bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
-				read response
-				if checkyesno ${response} ; then
-					FOLDER=$DOC_ROOT_FOLDER_MATCH/public
-				else
-					FOLDER=$DOC_ROOT_FOLDER_MATCH
-				fi
-			else
-				FOLDER=$DOC_ROOT_FOLDER_MATCH
-			fi
-
-		fi
+	*) FOLDER=$VIRTUALHOST
 	;;
 esac
 
+
 # Create the folder if we need to...
-if [ ! -d "${DOC_ROOT_PREFIX}/${FOLDER}" ]; then
-	/bin/echo -n "  + Creating folder $DOC_ROOT_PREFIX/$FOLDER... "
+if [ ! -d $DOC_ROOT_PREFIX/$FOLDER ]; then
+	echo -n "  + Creating folder $DOC_ROOT_PREFIX/$FOLDER... "
 	# su $USER -c "mkdir -p $DOC_ROOT_PREFIX/$FOLDER"
-	mkdir -p "${DOC_ROOT_PREFIX}/${FOLDER}"
+	mkdir -p $DOC_ROOT_PREFIX/$FOLDER
 	
 	# If $FOLDER is deeper than one level, we need to fix permissions properly
 	case $FOLDER in
@@ -675,59 +369,32 @@ if [ ! -d "${DOC_ROOT_PREFIX}/${FOLDER}" ]; then
 		# in the future for me.
 		dir=$FOLDER
 		while [ $dir != "." ]; do
-			chown $USER "${DOC_ROOT_PREFIX}/${dir}"
+			chown $USER:$OWNER_GROUP $DOC_ROOT_PREFIX/$dir
 			dir=`dirname $dir`
 		done
 	else
-		chown $USER "${DOC_ROOT_PREFIX}/${FOLDER}"
+		chown $USER:$OWNER_GROUP $DOC_ROOT_PREFIX/$FOLDER
 	fi
 	
-	/bin/echo "done"
-fi
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# See if a custom log should be used (requested by david.kerns, Issue #7)
-#
-if checkyesno ${PROMPT_FOR_LOGS}; then
-
-	/bin/echo -n "  - Enable custom server access and error logs in $VIRTUALHOST/logs? [y/N] "
-	
-	read resp
-	
-	case $resp in
-	
-		y*|Y*) 
-			log="1"
-		;;
-	
-		*)
-			log=""
-		;;
-	esac
-
-elif checkyesno ${ALWAYS_CREATE_LOGS}; then
-
-	log="1"
-
+	echo "done"
 fi
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Create a default index.html if there isn't already one there
 #
-if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.php" ]; then
+if [ ! -e $DOC_ROOT_PREFIX/$FOLDER/index.html -a ! -e $DOC_ROOT_PREFIX/$FOLDER/index.php ]; then
 
-	cat << __EOF >"${DOC_ROOT_PREFIX}/${FOLDER}/index.html"
+	cat << __EOF >$DOC_ROOT_PREFIX/$FOLDER/index.html
 <html>
 <head>
 <title>Welcome to $VIRTUALHOST</title>
+</head>
 <style type="text/css">
  body, div, td { font-family: "Lucida Grande"; font-size: 12px; color: #666666; }
  b { color: #333333; }
  .indent { margin-left: 10px; }
 </style>
-</head>
 <body link="#993300" vlink="#771100" alink="#ff6600">
 
 <table border="0" width="100%" height="95%"><tr><td align="center" valign="middle">
@@ -742,8 +409,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
   <p>You can find the configuration file for this virtual host in:<br>
   <table class="indent" border="0" cellspacing="3">
    <tr>
-    <td><img src="/icons/script.gif" width="20" height="22" border="0"></td>
-    <td><b>$APACHE_CONFIG/virtualhosts/$VIRTUALHOST</b></td>
+    <td><b>$APACHE_CONFIG/$APACHE_VIRTUAL_HOST/$VIRTUALHOST</b></td>
    </tr>
   </table>
   </p>
@@ -751,19 +417,17 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
   <p>You will need to place all of your website files in:<br>
   <table class="indent" border="0" cellspacing="3">
    <tr>
-    <td><img src="/icons/dir.gif" width="20" height="22" border="0"></td>
     <td><b><a href="file://$DOC_ROOT_PREFIX/$FOLDER">$DOC_ROOT_PREFIX/$FOLDER</b></a></td>
    </tr>
   </table>
   </p>
   
-  <p>For the latest version of this script, tips, comments, <span style="font-size: 10px; color: #999999;">donations,</span> etc. visit:<br>
-  <table class="indent" border="0" cellspacing="3">
-   <tr>
-    <td><img src="/icons/forward.gif" width="20" height="22" border="0"></td>
-    <td><b><a href="http://patrickg.com/virtualhost">http://patrickg.com/virtualhost</a></b></td>
-   </tr>
-  </table>
+  <p>This script is based upon the excellent virtualhost (V1.04) script by Patrick Gibson <patrick@patrickg.com> for OS X. 
+  You can download the original script for OS X from Patrick's website: <b><a href="http://patrickg.com/virtualhost">http://patrickg.com/virtualhost</a></b>
+  </p>
+  <p>
+  For the latest version of this script for Ubuntu visit Bjorn Wijers' website: <br />
+  <b><a href="http://burobjorn.nl">http://burobjorn.nl</a></b><br>
   </p>
  </div>
 
@@ -773,7 +437,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
 </body>
 </html>
 __EOF
-	chown $USER "${DOC_ROOT_PREFIX}/${FOLDER}/index.html"
+	chown $USER:$OWNER_GROUP $DOC_ROOT_PREFIX/$FOLDER/index.html
 
 fi	
 
@@ -781,29 +445,34 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Create a default virtualhost file
 #
-/bin/echo -n "+ Creating virtualhost file... "
-create_virtualhost $VIRTUALHOST "${DOC_ROOT_PREFIX}/${FOLDER}" $log
-/bin/echo "done"
+echo -n "+ Creating virtualhost file... "
+cat << __EOF >$APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/$VIRTUALHOST
+<VirtualHost 127.0.0.1>
+  DocumentRoot $DOC_ROOT_PREFIX/$FOLDER
+  ServerName $VIRTUALHOST
+
+  ScriptAlias /cgi-bin $DOC_ROOT_PREFIX/$FOLDER/cgi-bin
+
+  <Directory $DOC_ROOT_PREFIX/$FOLDER>
+    Options All
+    AllowOverride All
+  </Directory>
+</VirtualHost>
+__EOF
+
+	
+# Enable the virtual host
+/usr/sbin/a2ensite $VIRTUALHOST 1>/dev/null 2>/dev/null
+
+echo "done"
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Restart apache for the changes to take effect
 #
-if [ -x /usr/bin/dscacheutil ]; then
-	/bin/echo -n "+ Flushing cache... "
-	dscacheutil -flushcache
-	sleep 1
-	curl --silent http://$VIRTUALHOST/ 2>&1 >/dev/null
-	/bin/echo "done"
-	
-	dscacheutil -q host | grep -q $VIRTUALHOST
-	
-	sleep 1
-fi
-
-/bin/echo -n "+ Restarting Apache... "
+echo -n "+ Restarting Apache... "
 $APACHECTL graceful 1>/dev/null 2>/dev/null
-/bin/echo "done"
+echo "done"
 
 cat << __EOF
 
@@ -815,7 +484,7 @@ __EOF
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Launch the new URL in the browser
 #
-/bin/echo -n "Launching virtualhost... "
-$OPEN_COMMAND http://$VIRTUALHOST/
-/bin/echo "done"
+echo -n "Launching virtualhost... "
+$DEFAULT_BROWSER http://$VIRTUALHOST/
+echo "done"
 
