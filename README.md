@@ -4,5 +4,5 @@ You can grab the [script here](https://github.com/pgib/virtualhost.sh/raw/master
 
 ## Documentation
 
-See the [wiki](https://github.com/pgib/virtualhost.sh/wiki)
+See the [wiki](https://github.com/pgib/virtualhost.sh/wiki/_pages)
 
