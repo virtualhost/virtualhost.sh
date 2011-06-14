@@ -187,6 +187,9 @@ HOME_PARTITION="/Users"
 # to be nagged about "fixing" your DocumentRoot, set this to "yes".
 SKIP_DOCUMENT_ROOT_CHECK="no"
 
+# If Apache works on a different port than the default 80, set it here
+APACHE_PORT="80"
+
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
 # redo your own settings.
@@ -244,7 +247,7 @@ create_virtualhost()
 	fi
 	cat << __EOF >$APACHE_CONFIG/virtualhosts/$1
 # Created $date
-<VirtualHost *:80>
+<VirtualHost *:$APACHE_PORT>
   DocumentRoot "$2"
   ServerName $1
   $SERVER_ALIAS
@@ -514,11 +517,11 @@ __EOT
 	fi
 fi
 
-if ! grep -q -E "^NameVirtualHost \*:80" $APACHE_CONFIG/httpd.conf ; then
+if ! grep -q -E "^NameVirtualHost \*:$APACHE_PORT" $APACHE_CONFIG/httpd.conf ; then
 
 	/bin/echo "httpd.conf not ready for virtual hosting. Fixing..."
 	cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
-	/bin/echo "NameVirtualHost *:80" >> $APACHE_CONFIG/httpd.conf
+	/bin/echo "NameVirtualHost *:$APACHE_PORT" >> $APACHE_CONFIG/httpd.conf
 	
 	if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
 		mkdir $APACHE_CONFIG/virtualhosts
@@ -564,9 +567,9 @@ if [ -d /etc/httpd/virtualhosts ]; then
 fi
 
 if [ -z $WILDCARD_ZONE ]; then
-	/bin/echo -n "Create http://${VIRTUALHOST}/? [Y/n]: "
+	/bin/echo -n "Create http://${VIRTUALHOST}:${APACHE_PORT}/? [Y/n]: "
 else
-	/bin/echo -n "Create http://${VIRTUALHOST}.${WILDCARD_ZONE}/? [Y/n]: "
+	/bin/echo -n "Create http://${VIRTUALHOST}.${WILDCARD_ZONE}:${APACHE_PORT}/? [Y/n]: "
 fi
 
 read continue
@@ -749,7 +752,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
  </div>
 
  <div align="left">
-  <p>If you are reading this in your web browser, then the only logical conclusion is that the <b><a href="http://$VIRTUALHOST/">http://$VIRTUALHOST/</a></b> virtualhost was setup correctly. :)</p>
+  <p>If you are reading this in your web browser, then the only logical conclusion is that the <b><a href="http://$VIRTUALHOST:$APACHE_PORT/">http://$VIRTUALHOST:$APACHE_PORT/</a></b> virtualhost was setup correctly. :)</p>
   
   <p>You can find the configuration file for this virtual host in:<br>
   <table class="indent" border="0" cellspacing="3">
@@ -805,7 +808,7 @@ if [ -x /usr/bin/dscacheutil ]; then
 	/bin/echo -n "+ Flushing cache... "
 	dscacheutil -flushcache
 	sleep 1
-	curl --silent http://$VIRTUALHOST/ 2>&1 >/dev/null
+	curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
 	/bin/echo "done"
 	
 	dscacheutil -q host | grep -q $VIRTUALHOST
@@ -819,7 +822,7 @@ $APACHECTL graceful 1>/dev/null 2>/dev/null
 
 cat << __EOF
 
-http://$VIRTUALHOST/ is setup and ready for use.
+http://$VIRTUALHOST:$APACHE_PORT/ is setup and ready for use.
 
 __EOF
 
@@ -828,6 +831,6 @@ __EOF
 # Launch the new URL in the browser
 #
 /bin/echo -n "Launching virtualhost... "
-open_command "http://$VIRTUALHOST/"
+open_command "http://$VIRTUALHOST:$APACHE_PORT/"
 /bin/echo "done"
 
