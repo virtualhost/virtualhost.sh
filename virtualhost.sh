@@ -420,15 +420,15 @@ fi
 # Delete the virtualhost if that's the requested action
 #
 if [ ! -z $DELETE ]; then
-	/bin/echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
-
-	read continue
-	
-	case $continue in
-	n*|N*) exit
-	esac
-
 	if host_exists $VIRTUALHOST ; then
+		/bin/echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
+
+		read continue
+	
+		case $continue in
+		n*|N*) exit
+		esac
+
 		if ! checkyesno ${SKIP_ETC_HOSTS}; then
 			/bin/echo -n "  - Removing $VIRTUALHOST from /etc/hosts... "
 					
@@ -489,6 +489,7 @@ if [ ! -z $DELETE ]; then
 		fi
 	else
 		/bin/echo "- Virtualhost $VIRTUALHOST does not currently exist. Aborting..."
+		exit 1
 	fi
 
 	exit
