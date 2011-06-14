@@ -143,9 +143,12 @@ APACHECTL="/usr/sbin/apachectl"
 
 # If you wish to change the default application that gets launched after the
 # virtual host is created, define it here:
-#OPEN_COMMAND="/usr/bin/open -a /Applications/Firefox.app"
-#OPEN_COMMAND="/usr/bin/open -a /Applications/WebKit.app"
 OPEN_COMMAND="/usr/bin/open"
+
+# If you want to use a different browser than Safari, define it here:
+#BROWSER="Firefox"
+#BROWSER="WebKit"
+#BROWSER="Google Chrome"
 
 # If defined, a ServerAlias os $1.$WILDCARD_ZONE will be added to the virtual
 # host file. This is useful if you, for example, have setup a wildcard domain
@@ -201,6 +204,15 @@ host_exists()
 		return 0
 	else
 		return 1
+	fi
+}
+
+open_command()
+{
+	if [ ! -z "$BROWSER" ]; then
+		$OPEN_COMMAND -a "$BROWSER" "$@"
+	else
+		$OPEN_COMMAND "$@"
 	fi
 }
 
@@ -298,7 +310,7 @@ version_check()
 		
 			case $resp in
 			y*|Y*)
-				$OPEN_COMMAND "https://github.com/pgib/virtualhost.sh"
+				open_command "https://github.com/pgib/virtualhost.sh"
 				exit
 			;;
 			
@@ -816,6 +828,6 @@ __EOF
 # Launch the new URL in the browser
 #
 /bin/echo -n "Launching virtualhost... "
-$OPEN_COMMAND http://$VIRTUALHOST/
+open_command "http://$VIRTUALHOST/"
 /bin/echo "done"
 
