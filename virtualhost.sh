@@ -659,6 +659,14 @@ case $resp in
 					else
 						FOLDER=$VIRTUALHOST
 					fi
+				elif [ -d $VIRTUALHOST/web ]; then
+					/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
+					read response
+					if checkyesno ${response} ; then
+						FOLDER=$VIRTUALHOST/web
+					else
+						FOLDER=$VIRTUALHOST
+					fi
 				fi
 			else
 				FOLDER=$VIRTUALHOST
@@ -669,6 +677,14 @@ case $resp in
 				read response
 				if checkyesno ${response} ; then
 					FOLDER=$DOC_ROOT_FOLDER_MATCH/public
+				else
+					FOLDER=$DOC_ROOT_FOLDER_MATCH
+				fi
+			elif [ -d "$DOC_ROOT_FOLDER_MATCH/web" ]; then
+				/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
+				read response
+				if checkyesno ${response} ; then
+					FOLDER=$DOC_ROOT_FOLDER_MATCH/web
 				else
 					FOLDER=$DOC_ROOT_FOLDER_MATCH
 				fi
