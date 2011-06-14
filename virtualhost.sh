@@ -460,7 +460,25 @@ if [ ! -z $DELETE ]; then
 				;;
 				esac
 			fi
-				
+
+			LOG_FILES=`grep "CustomLog\|ErrorLog" $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
+			if [ ! -z "$LOG_FILES" ]; then
+				/bin/echo -n "  + Delete logs? [y/N]: "
+
+				read resp
+
+				case $resp in
+				y*|Y*)
+					/bin/echo -n "  - Deleting logs... "
+					if rm -f ${LOG_FILES} ; then
+						/bin/echo "done"
+					else
+						/bin/echo "Could not delete $LOG_FILES"
+					fi
+				;;
+				esac
+			fi
+
 			/bin/echo -n "  - Deleting virtualhost file... ($APACHE_CONFIG/virtualhosts/$VIRTUALHOST) "
 			rm $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
 			/bin/echo "done"
