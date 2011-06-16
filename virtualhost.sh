@@ -10,6 +10,16 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# CHANGES SINCE v1.23 (courtesy of http://github.com/aersoy)
+#
+# - Detect Symfony projects;
+# - Changes to deleting virtual hosts:
+#    * Check existence of virtual host before asking for confirmation to delete
+#    * Ask for deletion of log files during --delete;
+# - Default port for virtual host is a variable ($APACHE_PORT);
+# - Allow for other browsers such as Google Chrome to be used when opening up
+#   the virtual host after it's completed.
+#
 # CHANGES SINCE v1.22
 # - Fix a bug when automatically rerunning script using sudo.
 #   (Issue #11 reported and fixed by Jake Smith <Jake.Smith92>)
@@ -103,7 +113,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.23"
+version="1.24"
 #
 
 # No point going any farther if we're not running correctly...
