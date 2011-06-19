@@ -51,12 +51,18 @@
 #
 # Set the browser to use, in GNOME you can use gnome-open to use the system default browser, but I prefer to call Firefox directly
 # At the moment this causes Firefox to issue a warning. If you know how to solve this feel free to contact me
+# This is because of sudo. But no idea how to solve that 
 #
 	DEFAULT_BROWSER="/usr/bin/firefox -new-tab" 
 #
 # By default, use the site folders that get created will be 0wn3d by this group
 	OWNER_GROUP="www-data"
 #
+# to be nagged about "fixing" your DocumentRoot, set this to "yes".
+      	SKIP_DOCUMENT_ROOT_CHECK="yes"
+#
+# If Apache works on a different port than the default 80, set it here
+	APACHE_PORT="80"
 #
 #======= DO NOT EDIT BELOW THIS lINE UNLESS YOU KNOW WHAT YOU ARE DOING ======== 
 
@@ -212,16 +218,17 @@ esac
 # e) Create a _localhost file for the default "localhost" virtualhost
 #
 
-if ! grep -q -e "^DocumentRoot \"$DOC_ROOT_PREFIX\"" $APACHE_CONFIG/$APACHE_CONFIG_FILENAME ; then
-	echo "The DocumentRoot in $APACHE_CONFIG_FILENAME does not point where it should."
-	echo -n "Do you want to set it to $DOC_ROOT_PREFIX? [Y/n]: "	
-	read DOCUMENT_ROOT
-	case $DOCUMENT_ROOT in
-	n*|N*)
-		echo "Okay, just re-run this script if you change your mind."
-	;;
-	*)
-		cat << __EOT | ed $APACHE_CONFIG/$APACHE_CONFIG_FILENAME 1>/dev/null 2>/dev/null
+if [ $SKIP_DOCUMENT_ROOT_CHECK  != 'yes' ]; then
+	if ! grep -q -e "^DocumentRoot \"$DOC_ROOT_PREFIX\"" $APACHE_CONFIG/$APACHE_CONFIG_FILENAME ; then
+		echo "The DocumentRoot in $APACHE_CONFIG_FILENAME does not point where it should."
+		echo -n "Do you want to set it to $DOC_ROOT_PREFIX? [Y/n]: "	
+		read DOCUMENT_ROOT
+		case $DOCUMENT_ROOT in
+		n*|N*)
+			echo "Okay, just re-run this script if you change your mind."
+		;;
+		*)
+			cat << __EOT | ed $APACHE_CONFIG/$APACHE_CONFIG_FILENAME 1>/dev/null 2>/dev/null
 /^DocumentRoot
 i
 #
@@ -234,8 +241,9 @@ DocumentRoot "$DOC_ROOT_PREFIX"
 w
 q
 __EOT
-	;;
-	esac
+		;;
+		esac
+		fi
 fi
 
 if ! grep -q -E "^NameVirtualHost $IP_ADDRESS" $APACHE_CONFIG/$APACHE_CONFIG_FILENAME ; then
@@ -447,7 +455,7 @@ fi
 #
 echo -n "+ Creating virtualhost file... "
 cat << __EOF >$APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/$VIRTUALHOST
-<VirtualHost 127.0.0.1>
+<VirtualHost 127.0.0.1:$APACHE_PORT>
   DocumentRoot $DOC_ROOT_PREFIX/$FOLDER
   ServerName $VIRTUALHOST
 
@@ -484,7 +492,7 @@ __EOF
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Launch the new URL in the browser
 #
-echo -n "Launching virtualhost... "
+echo -n "Launching virtualhost... " 
 $DEFAULT_BROWSER http://$VIRTUALHOST/
 echo "done"
 
