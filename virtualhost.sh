@@ -59,7 +59,7 @@
 	OWNER_GROUP="www-data"
 #
 # to be nagged about "fixing" your DocumentRoot, set this to "yes".
-      	SKIP_DOCUMENT_ROOT_CHECK="yes"
+      	SKIP_DOCUMENT_ROOT_CHECK="no"
 #
 # If Apache works on a different port than the default 80, set it here
 	APACHE_PORT="80"
@@ -250,12 +250,12 @@ if ! grep -q -E "^NameVirtualHost $IP_ADDRESS" $APACHE_CONFIG/$APACHE_CONFIG_FIL
 
 	echo "$APACHE_CONFIG_FILENAME not ready for virtual hosting. Fixing..."
 	cp $APACHE_CONFIG/$APACHE_CONFIG_FILENAME $APACHE_CONFIG/$APACHE_CONFIG_FILENAME.original
-	echo "NameVirtualHost $IP_ADDRESS" >> $APACHE_CONFIG/$APACHE_CONFIG_FILENAME
+	echo "NameVirtualHost $IP_ADDRESS:$APACHE_PORT" >> $APACHE_CONFIG/$APACHE_CONFIG_FILENAME
 	
 	if [ ! -d $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE ]; then
 		mkdir $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE
 		cat << __EOT > $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/_localhost
-<VirtualHost $IP_ADDRESS>
+<VirtualHost $IP_ADDRESS:$APACHE_PORT>
   DocumentRoot $DOC_ROOT_PREFIX
   ServerName localhost
 
@@ -417,7 +417,7 @@ if [ ! -e $DOC_ROOT_PREFIX/$FOLDER/index.html -a ! -e $DOC_ROOT_PREFIX/$FOLDER/i
   <p>You can find the configuration file for this virtual host in:<br>
   <table class="indent" border="0" cellspacing="3">
    <tr>
-    <td><b>$APACHE_CONFIG/$APACHE_VIRTUAL_HOST/$VIRTUALHOST</b></td>
+    <td><b>$APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/$VIRTUALHOST</b></td>
    </tr>
   </table>
   </p>
@@ -434,8 +434,10 @@ if [ ! -e $DOC_ROOT_PREFIX/$FOLDER/index.html -a ! -e $DOC_ROOT_PREFIX/$FOLDER/i
   You can download the original script for OS X from Patrick's website: <b><a href="http://patrickg.com/virtualhost">http://patrickg.com/virtualhost</a></b>
   </p>
   <p>
-  For the latest version of this script for Ubuntu visit Bjorn Wijers' website: <br />
+  For the latest version of this script for Ubuntu go to <b><a href="https://github.com/pgib/virtualhost.sh/tree/ubuntu">Github</a></b>!<br/>	
+ The Ubuntu Version is based on Bjorn Wijers script. Visit Bjorn Wijers' website: <br />
   <b><a href="http://burobjorn.nl">http://burobjorn.nl</a></b><br>
+	
   </p>
  </div>
 
@@ -455,7 +457,7 @@ fi
 #
 echo -n "+ Creating virtualhost file... "
 cat << __EOF >$APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/$VIRTUALHOST
-<VirtualHost 127.0.0.1:$APACHE_PORT>
+<VirtualHost *:$APACHE_PORT>
   DocumentRoot $DOC_ROOT_PREFIX/$FOLDER
   ServerName $VIRTUALHOST
 
