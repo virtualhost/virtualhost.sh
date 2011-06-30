@@ -50,9 +50,6 @@
 	APACHE_VIRTUAL_HOSTS_AVAILABLE="sites-available"
 #
 # Set the browser to use, in GNOME you can use gnome-open to use the system default browser, but I prefer to call Firefox directly
-# At the moment this causes Firefox to issue a warning. If you know how to solve this feel free to contact me
-# This is because of sudo. But no idea how to solve that 
-#
 	DEFAULT_BROWSER="/usr/bin/firefox -new-tab" 
 #
 # By default, use the site folders that get created will be 0wn3d by this group
@@ -495,6 +492,6 @@ __EOF
 # Launch the new URL in the browser
 #
 echo -n "Launching virtualhost... " 
-$DEFAULT_BROWSER http://$VIRTUALHOST/
+sudo -u $USER -H $DEFAULT_BROWSER -new-tab http://$VIRTUALHOST/
 echo "done"
 
