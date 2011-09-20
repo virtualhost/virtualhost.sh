@@ -10,6 +10,10 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# CHANGES SINCE v1.24
+#
+# - Added --list option to list any virtualhosts that have been setup
+#
 # CHANGES SINCE v1.23 (courtesy of http://github.com/aersoy)
 #
 # - Detect Symfony projects;
@@ -113,7 +117,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.24"
+version="1.25"
 #
 
 # No point going any farther if we're not running correctly...
@@ -123,11 +127,7 @@ if [ `whoami` != 'root' ]; then
 	sudo $0 $* || exit 1
 fi
 
-if [ -z "$SUDO_USER" ]; then
-	/bin/echo "You must start this under your regular user account using sudo."
-	/bin/echo "Rerun using: sudo $0 $*"
-	exit 1
-elif [ $SUDO_USER = "root" ]; then
+if [ $SUDO_USER = "root" ]; then
 	/bin/echo "You must start this under your regular user account (not root) using sudo."
 	/bin/echo "Rerun using: sudo $0 $*"
 	exit 1
@@ -395,6 +395,7 @@ usage()
 {
 	cat << __EOT
 Usage: sudo virtualhost.sh <name>
+       sudo virtualhost.sh --list
        sudo virtualhost.sh --delete <name>
    where <name> is the one-word name you'd like to use. (e.g. mysite)
    
@@ -415,6 +416,20 @@ else
 			VIRTUALHOST=$2
 			DELETE=0
 		fi		
+	elif [ $1 = "--list" ]; then
+		if [ -d $APACHE_CONFIG/virtualhosts ]; then
+			echo "Listing virtualhosts found in $APACHE_CONFIG/virtualhosts"
+			echo
+			for i in $APACHE_CONFIG/virtualhosts/*; do
+				server_name=`grep ServerName $i | awk '{print $2}'`
+				doc_root=`grep DocumentRoot $i | awk '{print $2}' | sed -e 's/"//g'`
+				echo "http://${server_name}/ -> ${doc_root}"
+			done
+		else
+			echo "No virtualhosts have been setup yet."
+		fi
+		
+		exit
 	else
 		VIRTUALHOST=$1
 	fi
