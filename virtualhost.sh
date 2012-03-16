@@ -893,4 +893,4 @@ __EOF
 /bin/echo -n "Launching virtualhost... "
 open_command "http://$VIRTUALHOST:$APACHE_PORT/"
 /bin/echo "done"
-
+exit 1
