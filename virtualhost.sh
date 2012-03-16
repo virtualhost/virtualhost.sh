@@ -1,7 +1,6 @@
 #!/bin/sh
-# $Id: virtualhost.sh 34 2010-05-13 16:04:17Z patrickg.com $
 #================================================================================
-# virtualhost.sh                                                $Revision: 1.22 $
+# virtualhost.sh
 #
 # A fancy little script to setup a new virtualhost in Mac OS X.
 #
@@ -10,6 +9,27 @@
 # sudo ./virtualhost.sh --delete <site>
 #
 # where <site> is the site name you used when you first created the host.
+#
+# CHANGES SINCE v1.24
+#
+# - Added --list option to list any virtualhosts that have been setup
+#
+# CHANGES SINCE v1.23 (courtesy of http://github.com/aersoy)
+#
+# - Detect Symfony projects;
+# - Changes to deleting virtual hosts:
+#    * Check existence of virtual host before asking for confirmation to delete
+#    * Ask for deletion of log files during --delete;
+# - Default port for virtual host is a variable ($APACHE_PORT);
+# - Allow for other browsers such as Google Chrome to be used when opening up
+#   the virtual host after it's completed.
+#
+# CHANGES SINCE v1.22
+# - Fix a bug when automatically rerunning script using sudo.
+#   (Issue #11 reported and fixed by Jake Smith <Jake.Smith92>)
+# - Fix a bug that prevented the document root from being deleted when a virtual
+#   host was deleted.
+#   (Issue #12 reported and fixed by Jake Smith <Jake.Smith92>)
 #
 # CHANGES SINCE v1.21
 # - It is now possible to use this script in environments like FreeBSD. Some 
@@ -97,7 +117,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.22"
+version="1.25"
 #
 
 # No point going any farther if we're not running correctly...
@@ -107,15 +127,12 @@ if [ `whoami` != 'root' ]; then
 	sudo $0 $* || exit 1
 fi
 
-if [ -z "$SUDO_USER" ]; then
-	/bin/echo "You must start this under your regular user account using sudo."
-	/bin/echo "Rerun using: sudo $0 $*"
-	exit 1
-elif [ $SUDO_USER = "root" ]; then
+if [ $SUDO_USER = "root" ]; then
 	/bin/echo "You must start this under your regular user account (not root) using sudo."
 	/bin/echo "Rerun using: sudo $0 $*"
 	exit 1
 fi
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If you are using this script on a production machine with a static IP address,
 # and you wish to setup a "live" virtualhost, you can change the following IP
@@ -136,9 +153,12 @@ APACHECTL="/usr/sbin/apachectl"
 
 # If you wish to change the default application that gets launched after the
 # virtual host is created, define it here:
-#OPEN_COMMAND="/usr/bin/open -a /Applications/Firefox.app"
-#OPEN_COMMAND="/usr/bin/open -a /Applications/WebKit.app"
 OPEN_COMMAND="/usr/bin/open"
+
+# If you want to use a different browser than Safari, define it here:
+#BROWSER="Firefox"
+#BROWSER="WebKit"
+#BROWSER="Google Chrome"
 
 # If defined, a ServerAlias os $1.$WILDCARD_ZONE will be added to the virtual
 # host file. This is useful if you, for example, have setup a wildcard domain
@@ -177,6 +197,9 @@ HOME_PARTITION="/Users"
 # to be nagged about "fixing" your DocumentRoot, set this to "yes".
 SKIP_DOCUMENT_ROOT_CHECK="no"
 
+# If Apache works on a different port than the default 80, set it here
+APACHE_PORT="80"
+
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
 # redo your own settings.
@@ -194,6 +217,15 @@ host_exists()
 		return 0
 	else
 		return 1
+	fi
+}
+
+open_command()
+{
+	if [ ! -z "$BROWSER" ]; then
+		$OPEN_COMMAND -a "$BROWSER" "$@"
+	else
+		$OPEN_COMMAND "$@"
 	fi
 }
 
@@ -223,9 +255,9 @@ create_virtualhost()
 			chown $USER "${log_folder_path}"
 		fi
 	fi
-	cat << __EOF >$APACHE_CONFIG/vhosts/$1
+	cat << __EOF >$APACHE_CONFIG/virtualhosts/$1
 # Created $date
-<VirtualHost *:80>
+<VirtualHost *:$APACHE_PORT>
   DocumentRoot "$2"
   ServerName $1
   $SERVER_ALIAS
@@ -239,7 +271,7 @@ create_virtualhost()
     Allow from all
   </Directory>
   
-  ${log}CustomLog "${access_log}" common
+  ${log}CustomLog "${access_log}" combined
   ${log}ErrorLog "${error_log}"
   
 </VirtualHost>
@@ -291,12 +323,12 @@ version_check()
 		
 			case $resp in
 			y*|Y*)
-				$OPEN_COMMAND "http://code.google.com/p/virtualhost-sh/"
+				open_command "https://github.com/pgib/virtualhost.sh"
 				exit
 			;;
 			
 			*)
-				/bin/echo "Okay. At your convenience, visit: http://code.google.com/p/virtualhost-sh/"
+				/bin/echo "Okay. At your convenience, visit: https://github.com/pgib/virtualhost.sh"
 				/bin/echo
 			;;
 			esac
@@ -363,6 +395,7 @@ usage()
 {
 	cat << __EOT
 Usage: sudo virtualhost.sh <name>
+       sudo virtualhost.sh --list
        sudo virtualhost.sh --delete <name>
    where <name> is the one-word name you'd like to use. (e.g. mysite)
    
@@ -380,11 +413,25 @@ else
 		if [ -z $2 ]; then
 			usage
 		else
-			VIRTUALHOST="${2}"
+			VIRTUALHOST=$2
 			DELETE=0
 		fi		
+	elif [ $1 = "--list" ]; then
+		if [ -d $APACHE_CONFIG/virtualhosts ]; then
+			echo "Listing virtualhosts found in $APACHE_CONFIG/virtualhosts"
+			echo
+			for i in $APACHE_CONFIG/virtualhosts/*; do
+				server_name=`grep ServerName $i | awk '{print $2}'`
+				doc_root=`grep DocumentRoot $i | awk '{print $2}' | sed -e 's/"//g'`
+				echo "http://${server_name}/ -> ${doc_root}"
+			done
+		else
+			echo "No virtualhosts have been setup yet."
+		fi
+		
+		exit
 	else
-		VIRTUALHOST="${1}"
+		VIRTUALHOST=$1
 	fi
 fi
 
@@ -398,15 +445,15 @@ fi
 # Delete the virtualhost if that's the requested action
 #
 if [ ! -z $DELETE ]; then
-	/bin/echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
-
-	read continue
-	
-	case $continue in
-	n*|N*) exit
-	esac
-
 	if host_exists $VIRTUALHOST ; then
+		/bin/echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
+
+		read continue
+	
+		case $continue in
+		n*|N*) exit
+		esac
+
 		if ! checkyesno ${SKIP_ETC_HOSTS}; then
 			/bin/echo -n "  - Removing $VIRTUALHOST from /etc/hosts... "
 					
@@ -419,9 +466,8 @@ if [ ! -z $DELETE ]; then
 
 		/bin/echo "done"
 		
-		if [ -e $APACHE_CONFIG/vhosts/$VIRTUALHOST.conf ]; then
-			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/vhosts/$VIRTUALHOST.conf | awk '{print $2}' | tr -d '"'`
-			/bin/echo "$DOC_ROOT_PREFIX/$VIRTUALHOST | $DOCUMENT_ROOT"
+		if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
+			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
 
 			if [ -d $DOCUMENT_ROOT ]; then
 				/bin/echo -n "  + Found DocumentRoot $DOCUMENT_ROOT. Delete this folder? [y/N]: "
@@ -439,9 +485,27 @@ if [ ! -z $DELETE ]; then
 				;;
 				esac
 			fi
-				
-			/bin/echo -n "  - Deleting virtualhost file... ($APACHE_CONFIG/vhosts/$VIRTUALHOST.conf) "
-			rm $APACHE_CONFIG/vhosts/$VIRTUALHOST.conf
+
+			LOG_FILES=`grep "CustomLog\|ErrorLog" $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
+			if [ ! -z "$LOG_FILES" ]; then
+				/bin/echo -n "  + Delete logs? [y/N]: "
+
+				read resp
+
+				case $resp in
+				y*|Y*)
+					/bin/echo -n "  - Deleting logs... "
+					if rm -f ${LOG_FILES} ; then
+						/bin/echo "done"
+					else
+						/bin/echo "Could not delete $LOG_FILES"
+					fi
+				;;
+				esac
+			fi
+
+			/bin/echo -n "  - Deleting virtualhost file... ($APACHE_CONFIG/virtualhosts/$VIRTUALHOST) "
+			rm $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
 			/bin/echo "done"
 
 			/bin/echo -n "+ Restarting Apache... "
@@ -450,6 +514,7 @@ if [ ! -z $DELETE ]; then
 		fi
 	else
 		/bin/echo "- Virtualhost $VIRTUALHOST does not currently exist. Aborting..."
+		exit 1
 	fi
 
 	exit
@@ -496,18 +561,18 @@ __EOT
 	fi
 fi
 
-if ! grep -q -E "^NameVirtualHost \*:80" $APACHE_CONFIG/httpd.conf ; then
+if ! grep -q -E "^NameVirtualHost \*:$APACHE_PORT" $APACHE_CONFIG/httpd.conf ; then
 
 	/bin/echo "httpd.conf not ready for virtual hosting. Fixing..."
 	cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
-	/bin/echo "NameVirtualHost *:80" >> $APACHE_CONFIG/httpd.conf
+	/bin/echo "NameVirtualHost *:$APACHE_PORT" >> $APACHE_CONFIG/httpd.conf
 	
-	if [ ! -d $APACHE_CONFIG/vhosts ]; then
-		mkdir $APACHE_CONFIG/vhosts
+	if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
+		mkdir $APACHE_CONFIG/virtualhosts
 		create_virtualhost localhost $DOC_ROOT_PREFIX
 	fi
 
-	/bin/echo "Include $APACHE_CONFIG/vhosts"  >> $APACHE_CONFIG/httpd.conf
+	/bin/echo "Include $APACHE_CONFIG/virtualhosts"  >> $APACHE_CONFIG/httpd.conf
 
 
 fi
@@ -530,7 +595,7 @@ if [ -d /etc/httpd/virtualhosts ]; then
 			/bin/echo -n "  + Creating $host... "
 			if ! checkyesno ${SKIP_ETC_HOSTS}; then
 				if ! host_exists $host ; then
-					/bin/echo "\n$IP_ADDRESS	$host" >> /etc/hosts
+					/bin/echo "$IP_ADDRESS	$host" >> /etc/hosts
 				fi
 			fi
 			docroot=`grep DocumentRoot /etc/httpd/virtualhosts/$host | awk '{print $2}'`
@@ -546,9 +611,9 @@ if [ -d /etc/httpd/virtualhosts ]; then
 fi
 
 if [ -z $WILDCARD_ZONE ]; then
-	/bin/echo -n "Create http://${VIRTUALHOST}/? [Y/n]: "
+	/bin/echo -n "Create http://${VIRTUALHOST}:${APACHE_PORT}/? [Y/n]: "
 else
-	/bin/echo -n "Create http://${VIRTUALHOST}.${WILDCARD_ZONE}/? [Y/n]: "
+	/bin/echo -n "Create http://${VIRTUALHOST}.${WILDCARD_ZONE}:${APACHE_PORT}/? [Y/n]: "
 fi
 
 read continue
@@ -620,6 +685,14 @@ case $resp in
 					else
 						FOLDER=$VIRTUALHOST
 					fi
+				elif [ -d $VIRTUALHOST/web ]; then
+					/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
+					read response
+					if checkyesno ${response} ; then
+						FOLDER=$VIRTUALHOST/web
+					else
+						FOLDER=$VIRTUALHOST
+					fi
 				fi
 			else
 				FOLDER=$VIRTUALHOST
@@ -630,6 +703,14 @@ case $resp in
 				read response
 				if checkyesno ${response} ; then
 					FOLDER=$DOC_ROOT_FOLDER_MATCH/public
+				else
+					FOLDER=$DOC_ROOT_FOLDER_MATCH
+				fi
+			elif [ -d "$DOC_ROOT_FOLDER_MATCH/web" ]; then
+				/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
+				read response
+				if checkyesno ${response} ; then
+					FOLDER=$DOC_ROOT_FOLDER_MATCH/web
 				else
 					FOLDER=$DOC_ROOT_FOLDER_MATCH
 				fi
@@ -731,7 +812,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
  </div>
 
  <div align="left">
-  <p>If you are reading this in your web browser, then the only logical conclusion is that the <b><a href="http://$VIRTUALHOST/">http://$VIRTUALHOST/</a></b> virtualhost was setup correctly. :)</p>
+  <p>If you are reading this in your web browser, then the only logical conclusion is that the <b><a href="http://$VIRTUALHOST:$APACHE_PORT/">http://$VIRTUALHOST:$APACHE_PORT/</a></b> virtualhost was setup correctly. :)</p>
   
   <p>You can find the configuration file for this virtual host in:<br>
   <table class="indent" border="0" cellspacing="3">
@@ -776,7 +857,7 @@ fi
 # Create a default virtualhost file
 #
 /bin/echo -n "+ Creating virtualhost file... "
-create_virtualhost $VIRTUALHOST.conf "${DOC_ROOT_PREFIX}/${FOLDER}" $log
+create_virtualhost $VIRTUALHOST "${DOC_ROOT_PREFIX}/${FOLDER}" $log
 /bin/echo "done"
 
 
@@ -787,7 +868,7 @@ if [ -x /usr/bin/dscacheutil ]; then
 	/bin/echo -n "+ Flushing cache... "
 	dscacheutil -flushcache
 	sleep 1
-	curl --silent http://$VIRTUALHOST/ 2>&1 >/dev/null
+	curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
 	/bin/echo "done"
 	
 	dscacheutil -q host | grep -q $VIRTUALHOST
@@ -801,7 +882,7 @@ $APACHECTL graceful 1>/dev/null 2>/dev/null
 
 cat << __EOF
 
-http://$VIRTUALHOST/ is setup and ready for use.
+http://$VIRTUALHOST:$APACHE_PORT/ is setup and ready for use.
 
 __EOF
 
@@ -810,6 +891,6 @@ __EOF
 # Launch the new URL in the browser
 #
 /bin/echo -n "Launching virtualhost... "
-$OPEN_COMMAND http://$VIRTUALHOST/
+open_command "http://$VIRTUALHOST:$APACHE_PORT/"
 /bin/echo "done"
-
+exit 1
