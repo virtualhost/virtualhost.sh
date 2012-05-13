@@ -50,9 +50,6 @@ APACHECTL="/usr/sbin/apache2ctl"
 APACHE_VIRTUAL_HOSTS_ENABLED="sites-enabled"
 APACHE_VIRTUAL_HOSTS_AVAILABLE="sites-available"
 #
-# Set the browser to use, in GNOME you can use gnome-open to use the system default browser, but I prefer to call Firefox directly
-DEFAULT_BROWSER="/usr/bin/firefox -new-tab"
-#
 # By default, use the site folders that get created will be 0wn3d by this group
 OWNER_GROUP="www-data"
 #
