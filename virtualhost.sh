@@ -64,10 +64,9 @@ APACHE_PORT="80"
 #======= DO NOT EDIT BELOW THIS lINE UNLESS YOU KNOW WHAT YOU ARE DOING ========
 
 if [ `whoami` != 'root' ]; then
-
     echo "You must be running with root privileges to run this script."
-    exit
-
+    echo "Enter your password to continue..."
+    sudo $0 $* || exit 1
 fi
 
 if [ -z $USER -o $USER = "root" ]; then
@@ -75,9 +74,7 @@ if [ -z $USER -o $USER = "root" ]; then
         USER=$SUDO_USER
     else
         USER=""
-
         echo "ALERT! Your root shell did not provide your username."
-
         while : ; do
             if [ -z $USER ]; then
                 while : ; do
@@ -187,7 +184,7 @@ if [ ! -z $DELETE ]; then
 fi
 
 
-FIRSTNAME=`finger | awk '{print $2}' | tail -n 1`
+FIRSTNAME=`pinky | awk '{print $2}' | tail -n 1`
 cat << __EOT
 Hi $FIRSTNAME! Welcome to virtualhost.sh. This script will guide you through setting
 up a name-based virtualhost
