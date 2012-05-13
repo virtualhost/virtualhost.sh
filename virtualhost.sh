@@ -488,6 +488,6 @@ __EOF
     # Launch the new URL in the browser
     #
     echo -n "Launching virtualhost... "
-    sudo -u $USER -H $DEFAULT_BROWSER -new-tab http://$VIRTUALHOST/ &
+    sudo -u $USER -H xdg-open http://$VIRTUALHOST/ &
     echo "done"
 
