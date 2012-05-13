@@ -41,6 +41,7 @@ IP_ADDRESS="127.0.0.1"
 #
 # Configure the apache-related paths if these defaults do not work for you.
 #
+APACHE_CONFIG_PORTS="ports.conf"
 APACHE_CONFIG_FILENAME="apache2.conf"
 APACHE_CONFIG="/etc/apache2"
 APACHECTL="/usr/sbin/apache2ctl"
@@ -55,8 +56,8 @@ DEFAULT_BROWSER="/usr/bin/firefox -new-tab"
 # By default, use the site folders that get created will be 0wn3d by this group
 OWNER_GROUP="www-data"
 #
-# to be nagged about "fixing" your DocumentRoot, set this to "yes".
-SKIP_DOCUMENT_ROOT_CHECK="no"
+# don't want to be nagged about "fixing" your DocumentRoot?  Set this to "yes".
+SKIP_DOCUMENT_ROOT_CHECK="yes"
 #
 # If Apache works on a different port than the default 80, set it here
 APACHE_PORT="80"
@@ -239,7 +240,7 @@ __EOT
     fi
 fi
 
-if ! grep -q -E "^NameVirtualHost $IP_ADDRESS" $APACHE_CONFIG/$APACHE_CONFIG_FILENAME ; then
+if ! grep -q -E "^NameVirtualHost *:$APACHE_PORT" $APACHE_CONFIG/$APACHE_CONFIG_PORTS ; then
 
     echo "$APACHE_CONFIG_FILENAME not ready for virtual hosting. Fixing..."
     cp $APACHE_CONFIG/$APACHE_CONFIG_FILENAME $APACHE_CONFIG/$APACHE_CONFIG_FILENAME.original
@@ -248,7 +249,7 @@ if ! grep -q -E "^NameVirtualHost $IP_ADDRESS" $APACHE_CONFIG/$APACHE_CONFIG_FIL
     if [ ! -d $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE ]; then
         mkdir $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE
         cat << __EOT > $APACHE_CONFIG/$APACHE_VIRTUAL_HOSTS_AVAILABLE/_localhost
-        <VirtualHost $IP_ADDRESS:$APACHE_PORT>
+        <VirtualHost *:$APACHE_PORT>
         DocumentRoot $DOC_ROOT_PREFIX
         ServerName localhost
 
@@ -487,6 +488,6 @@ __EOF
     # Launch the new URL in the browser
     #
     echo -n "Launching virtualhost... "
-    sudo -u $USER -H $DEFAULT_BROWSER -new-tab http://$VIRTUALHOST/
+    sudo -u $USER -H $DEFAULT_BROWSER -new-tab http://$VIRTUALHOST/ &
     echo "done"
 
