@@ -127,7 +127,7 @@ if [ `whoami` != 'root' ]; then
 	sudo $0 $* || exit 1
 fi
 
-if [ $SUDO_USER = "root" ]; then
+if [ "$SUDO_USER" = "root" ]; then
 	/bin/echo "You must start this under your regular user account (not root) using sudo."
 	/bin/echo "Rerun using: sudo $0 $*"
 	exit 1
@@ -409,14 +409,14 @@ __EOT
 if [ -z $1 ]; then
 	usage
 else
-	if [ $1 = "--delete" ]; then
+	if [ "$1" = "--delete" ]; then
 		if [ -z $2 ]; then
 			usage
 		else
 			VIRTUALHOST=$2
 			DELETE=0
 		fi		
-	elif [ $1 = "--list" ]; then
+	elif [ "$1" = "--list" ]; then
 		if [ -d $APACHE_CONFIG/virtualhosts ]; then
 			echo "Listing virtualhosts found in $APACHE_CONFIG/virtualhosts"
 			echo
