@@ -32,7 +32,7 @@
 #   (Issue #12 reported and fixed by Jake Smith <Jake.Smith92>)
 #
 # CHANGES SINCE v1.21
-# - It is now possible to use this script in environments like FreeBSD. Some 
+# - It is now possible to use this script in environments like FreeBSD. Some
 #   new configuration variables support this such as SKIP_ETC_HOSTS,
 #   HOME_PARTITION, and SKIP_DOCUMENT_ROOT_CHECK.
 # - If you're doing Ruby on Rails, Merb, and other Rack-based development,
@@ -54,7 +54,7 @@
 # - [Issue #1] On Leopard, the first request to the new virtual host would fail.
 #   Have remedied this by making the first request in the script, in addition to
 #   the sleep 1 command.
-# - [Issue #4] Some users reported an error originating from a missing group. 
+# - [Issue #4] Some users reported an error originating from a missing group.
 #   Looks like Leopard doesn't create a group with the same name as the user like
 #   previous versions (and most other Unix-variants!) do. It was never a problem
 #   for me because my user account was created on Mac OS X 10.0, and has been
@@ -102,7 +102,7 @@
 #
 # CHANGES SINCE v1.02
 # - When creating the website folder, we now create all the intermediate folders
-#   in the case where a user sets their folder to something like 
+#   in the case where a user sets their folder to something like
 #   clients/project_a/mysite. (Thanks to Michael Allan for pointing this out.)
 #
 # CHANGES SINCE v1.01
@@ -117,7 +117,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.25"
+version="1.26"
 #
 
 # No point going any farther if we're not running correctly...
@@ -200,14 +200,21 @@ SKIP_DOCUMENT_ROOT_CHECK="no"
 # If Apache works on a different port than the default 80, set it here
 APACHE_PORT="80"
 
+# Batch mode (all prompting will assume Yes). Any value will activate this. Can
+# be set here, in ~/.virtualhost.sh.conf, or on the command line, like:
+# BATCH_MODE=yes virtualhost.sh mysite
+#BATCH_MODE="yes"
+
+# If you're satisfied with the version you have and do not wish to be reminded
+# of a new version, add the following line to your ~/.virtualhost.sh.conf file.
+#SKIP_VERSION_CHECK="yes"
+
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
 # redo your own settings.
 if [ -e ~/.virtualhost.sh.conf ]; then
 	. ~/.virtualhost.sh.conf
 fi
-
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -270,10 +277,10 @@ create_virtualhost()
     Order allow,deny
     Allow from all
   </Directory>
-  
+
   ${log}CustomLog "${access_log}" combined
   ${log}ErrorLog "${error_log}"
-  
+
 </VirtualHost>
 __EOF
 }
@@ -298,7 +305,7 @@ checkyesno()
 		[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]|[Oo][Ff][Ff]|[Nn]|0)
 		return 1
 		;;
-		
+
 		*)
 		return 1
 		;;
@@ -309,24 +316,29 @@ version_check()
 {
 	/bin/echo -n "Checking for updates... "
 	current_version=`dig +tries=1 +time=1 +retry=0 txt virtualhost.patrickgibson.com | grep -e '^virtualhost' | awk '{print $5}' | sed -e 's/"//g'`
-	
+
 	# See if we have the latest version
 	if [ -n "$current_version" ]; then
 		testes=`/bin/echo "$version < $current_version" | /usr/bin/bc`
-	
+
 		if [ $testes -eq 1 ]; then
 			/bin/echo "done"
-			/bin/echo "A newer version ($current_version) of virtualhost.sh is available."
-			/bin/echo -n "Do you want to get it now? [Y/n] "
-	
-			read resp
-		
+			if [ -z $BATCH_MODE ]; then
+				/bin/echo "A newer version ($current_version) of virtualhost.sh is available."
+				/bin/echo -n "Do you want to get it now? [Y/n] "
+				read resp
+			else
+				/bin/echo "A newer version ($current_version) of virtualhost.sh is available."
+				/bin/echo "Visit https://github.com/pgib/virtualhost.sh to go get it."
+				resp="n"
+			fi
+
 			case $resp in
 			y*|Y*)
 				open_command "https://github.com/pgib/virtualhost.sh"
 				exit
 			;;
-			
+
 			*)
 				/bin/echo "Okay. At your convenience, visit: https://github.com/pgib/virtualhost.sh"
 				/bin/echo
@@ -349,11 +361,13 @@ if [ ! -d $APACHE_CONFIG ]; then
 	/bin/echo
 	/bin/echo "http://patrickgibson.com/news/andsuch/virtualhost.tgz"
 	/bin/echo
-	
+
 	exit 1
 fi
 
-version_check
+if [ -z $SKIP_VERSION_CHECK ]; then
+  version_check
+fi
 
 # catch Ctrl-C
 #trap 'cleanup' 2
@@ -398,7 +412,7 @@ Usage: sudo virtualhost.sh <name>
        sudo virtualhost.sh --list
        sudo virtualhost.sh --delete <name>
    where <name> is the one-word name you'd like to use. (e.g. mysite)
-   
+
    Note that if "virtualhost.sh" is not in your PATH, you will have to write
    out the full path to it: eg. /Users/$USER/Desktop/virtualhost.sh <name>
 
@@ -415,7 +429,7 @@ else
 		else
 			VIRTUALHOST=$2
 			DELETE=0
-		fi		
+		fi
 	elif [ $1 = "--list" ]; then
 		if [ -d $APACHE_CONFIG/virtualhosts ]; then
 			echo "Listing virtualhosts found in $APACHE_CONFIG/virtualhosts"
@@ -428,7 +442,7 @@ else
 		else
 			echo "No virtualhosts have been setup yet."
 		fi
-		
+
 		exit
 	else
 		VIRTUALHOST=$1
@@ -448,32 +462,42 @@ if [ ! -z $DELETE ]; then
 	if host_exists $VIRTUALHOST ; then
 		/bin/echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
 
-		read continue
-	
+		if [ -z "$BATCH_MODE" ]; then
+			read continue
+		else
+			continue="Y"
+			/bin/echo $continue
+		fi
+
 		case $continue in
 		n*|N*) exit
 		esac
 
 		if ! checkyesno ${SKIP_ETC_HOSTS}; then
 			/bin/echo -n "  - Removing $VIRTUALHOST from /etc/hosts... "
-					
+
 			cat /etc/hosts | grep -v $VIRTUALHOST > /tmp/hosts.tmp
-		
+
 			if [ -s /tmp/hosts.tmp ]; then
 				mv /tmp/hosts.tmp /etc/hosts
 			fi
 		fi
 
 		/bin/echo "done"
-		
+
 		if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
 			DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
 
 			if [ -d $DOCUMENT_ROOT ]; then
 				/bin/echo -n "  + Found DocumentRoot $DOCUMENT_ROOT. Delete this folder? [y/N]: "
 
-				read resp
-			
+				if [ -z $BATCH_MODE ]; then
+					read resp
+				else
+					resp="n"
+					echo $resp
+				fi
+
 				case $resp in
 				y*|Y*)
 					/bin/echo -n "  - Deleting folder... "
@@ -490,7 +514,12 @@ if [ ! -z $DELETE ]; then
 			if [ ! -z "$LOG_FILES" ]; then
 				/bin/echo -n "  + Delete logs? [y/N]: "
 
-				read resp
+				if [ -z BATCH_MODE ]; then
+					read resp
+				else
+					resp="n"
+					echo $resp
+				fi
 
 				case $resp in
 				y*|Y*)
@@ -504,7 +533,7 @@ if [ ! -z $DELETE ]; then
 				esac
 			fi
 
-			/bin/echo -n "  - Deleting virtualhost file... ($APACHE_CONFIG/virtualhosts/$VIRTUALHOST) "
+			/bin/echo -n "  - Deleting virtualhost file, $APACHE_CONFIG/virtualhosts/$VIRTUALHOST... "
 			rm $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
 			/bin/echo "done"
 
@@ -536,9 +565,13 @@ fi
 if ! checkyesno ${SKIP_DOCUMENT_ROOT_CHECK} ; then
 	if ! grep -q -e "^DocumentRoot \"$DOC_ROOT_PREFIX\"" $APACHE_CONFIG/httpd.conf ; then
 		/bin/echo "httpd.conf's DocumentRoot does not point where it should."
-		/bin/echo -n "Do you with to set it to $DOC_ROOT_PREFIX? [Y/n]: "	
-		read DOCUMENT_ROOT
-		case $DOCUMENT_ROOT in
+		/bin/echo -n "Do you with to set it to $DOC_ROOT_PREFIX? [Y/n]: "
+		if [ -z $BATCH_MODE ]; then
+			read response
+		else
+			response="n"
+		fi
+		case $response in
 		n*|N*)
 			/bin/echo "Okay, just re-run this script if you change your mind."
 		;;
@@ -566,14 +599,13 @@ if ! grep -q -E "^NameVirtualHost \*:$APACHE_PORT" $APACHE_CONFIG/httpd.conf ; t
 	/bin/echo "httpd.conf not ready for virtual hosting. Fixing..."
 	cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
 	/bin/echo "NameVirtualHost *:$APACHE_PORT" >> $APACHE_CONFIG/httpd.conf
-	
+
 	if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
 		mkdir $APACHE_CONFIG/virtualhosts
 		create_virtualhost localhost $DOC_ROOT_PREFIX
 	fi
 
 	/bin/echo "Include $APACHE_CONFIG/virtualhosts"  >> $APACHE_CONFIG/httpd.conf
-
 
 fi
 
@@ -602,7 +634,7 @@ if [ -d /etc/httpd/virtualhosts ]; then
 			create_virtualhost $host $docroot
 			/bin/echo "done"
 		done
-		
+
 		mv /etc/httpd/virtualhosts /etc/httpd/virtualhosts-ported
 	;;
 	esac
@@ -616,7 +648,12 @@ else
 	/bin/echo -n "Create http://${VIRTUALHOST}.${WILDCARD_ZONE}:${APACHE_PORT}/? [Y/n]: "
 fi
 
-read continue
+if [ -z "$BATCH_MODE" ]; then
+	read continue
+else
+	continue="Y"
+	/bin/echo $continue
+fi
 
 case $continue in
 n*|N*) exit
@@ -650,7 +687,7 @@ if [ ! -d $VIRTUALHOST ]; then
 else
 	/bin/echo "found"
 fi
-	
+
 # See if we can find an appropriate folder
 if ls -1 $DOC_ROOT_PREFIX | grep -q -e ^$VIRTUALHOST; then
 	DOC_ROOT_FOLDER_MATCH=`ls -1 $DOC_ROOT_PREFIX | grep -e ^$VIRTUALHOST | head -n 1`
@@ -659,11 +696,16 @@ else
 	/bin/echo -n "  - Use $DOC_ROOT_PREFIX/$VIRTUALHOST as the virtualhost folder? [Y/n] "
 fi
 
-read resp
+if [ -z "$BATCH_MODE" ]; then
+	read resp
+else
+	resp="Y"
+	echo $resp
+fi
 
 case $resp in
 
-	n*|N*) 
+	n*|N*)
 		while : ; do
 			if [ -z "$FOLDER" ]; then
 				/bin/echo -n "  - Enter new folder name (located in Sites): "
@@ -679,7 +721,11 @@ case $resp in
 			if [ -d "$VIRTUALHOST" ]; then
 				if [ -d $VIRTUALHOST/public ]; then
 					/bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
-					read response
+					if [ -z "$BATCH_MODE" ]; then
+						read response
+					else
+						response="Y"
+					fi
 					if checkyesno ${response} ; then
 						FOLDER=$VIRTUALHOST/public
 					else
@@ -687,7 +733,11 @@ case $resp in
 					fi
 				elif [ -d $VIRTUALHOST/web ]; then
 					/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
-					read response
+					if [ -z "$BATCH_MODE" ]; then
+						read response
+					else
+						response="Y"
+					fi
 					if checkyesno ${response} ; then
 						FOLDER=$VIRTUALHOST/web
 					else
@@ -700,7 +750,12 @@ case $resp in
 		else
 			if [ -d "$DOC_ROOT_FOLDER_MATCH/public" ]; then
 				/bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
-				read response
+				if [ -z "$BATCH_MODE" ]; then
+					read response
+				else
+					response="Y"
+				fi
+
 				if checkyesno ${response} ; then
 					FOLDER=$DOC_ROOT_FOLDER_MATCH/public
 				else
@@ -708,7 +763,12 @@ case $resp in
 				fi
 			elif [ -d "$DOC_ROOT_FOLDER_MATCH/web" ]; then
 				/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
-				read response
+				if [ -z "$BATCH_MODE" ]; then
+					read response
+				else
+					response="Y"
+				fi
+
 				if checkyesno ${response} ; then
 					FOLDER=$DOC_ROOT_FOLDER_MATCH/web
 				else
@@ -727,13 +787,13 @@ if [ ! -d "${DOC_ROOT_PREFIX}/${FOLDER}" ]; then
 	/bin/echo -n "  + Creating folder $DOC_ROOT_PREFIX/$FOLDER... "
 	# su $USER -c "mkdir -p $DOC_ROOT_PREFIX/$FOLDER"
 	mkdir -p "${DOC_ROOT_PREFIX}/${FOLDER}"
-	
+
 	# If $FOLDER is deeper than one level, we need to fix permissions properly
 	case $FOLDER in
 		*/*)
 			subfolder=0
 		;;
-	
+
 		*)
 			subfolder=1
 		;;
@@ -756,7 +816,7 @@ if [ ! -d "${DOC_ROOT_PREFIX}/${FOLDER}" ]; then
 	else
 		chown $USER "${DOC_ROOT_PREFIX}/${FOLDER}"
 	fi
-	
+
 	/bin/echo "done"
 fi
 
@@ -767,15 +827,19 @@ fi
 if checkyesno ${PROMPT_FOR_LOGS}; then
 
 	/bin/echo -n "  - Enable custom server access and error logs in $VIRTUALHOST/logs? [y/N] "
-	
-	read resp
-	
+
+	if [ -z "$BATCH_MODE" ]; then
+		read resp
+	else
+		resp="Y"
+	fi
+
 	case $resp in
-	
-		y*|Y*) 
+
+		y*|Y*)
 			log="1"
 		;;
-	
+
 		*)
 			log=""
 		;;
@@ -813,7 +877,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
 
  <div align="left">
   <p>If you are reading this in your web browser, then the only logical conclusion is that the <b><a href="http://$VIRTUALHOST:$APACHE_PORT/">http://$VIRTUALHOST:$APACHE_PORT/</a></b> virtualhost was setup correctly. :)</p>
-  
+
   <p>You can find the configuration file for this virtual host in:<br>
   <table class="indent" border="0" cellspacing="3">
    <tr>
@@ -822,7 +886,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
    </tr>
   </table>
   </p>
-  
+
   <p>You will need to place all of your website files in:<br>
   <table class="indent" border="0" cellspacing="3">
    <tr>
@@ -831,7 +895,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
    </tr>
   </table>
   </p>
-  
+
   <p>For the latest version of this script, tips, comments, <span style="font-size: 10px; color: #999999;">donations,</span> etc. visit:<br>
   <table class="indent" border="0" cellspacing="3">
    <tr>
@@ -850,7 +914,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
 __EOF
 	chown $USER "${DOC_ROOT_PREFIX}/${FOLDER}/index.html"
 
-fi	
+fi
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -870,9 +934,9 @@ if [ -x /usr/bin/dscacheutil ]; then
 	sleep 1
 	curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
 	/bin/echo "done"
-	
+
 	dscacheutil -q host | grep -q $VIRTUALHOST
-	
+
 	sleep 1
 fi
 
