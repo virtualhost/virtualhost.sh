@@ -210,6 +210,11 @@ APACHE_PORT="80"
 # of a new version, add the following line to your ~/.virtualhost.sh.conf file.
 #SKIP_VERSION_CHECK="yes"
 
+# We now will search your $DOC_ROOT_PREFIX for a matching subfolder using find.
+# By default, we will go two levels deep so that it doesn't take too long. If
+# you have a really complex structure, you may need to increase this.
+MAX_SEARCH_DEPTH=2
+
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
 # redo your own settings.
@@ -679,22 +684,27 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Ask the user where they would like to put the files for this virtual host
 #
-/bin/echo -n "+ Checking for $DOC_ROOT_PREFIX/$VIRTUALHOST... "
-
-cd $DOC_ROOT_PREFIX
-
-if [ ! -d $VIRTUALHOST ]; then
-	/bin/echo "not found"
-else
-	/bin/echo "found"
-fi
+/bin/echo "+ Checking for an existing document root to use..."
 
 # See if we can find an appropriate folder
 if ls -1 $DOC_ROOT_PREFIX | grep -q -e ^$VIRTUALHOST; then
 	DOC_ROOT_FOLDER_MATCH=`ls -1 $DOC_ROOT_PREFIX | grep -e ^$VIRTUALHOST | head -n 1`
-	/bin/echo -n "  - Use $DOC_ROOT_PREFIX/$DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
 else
-	/bin/echo -n "  - Use $DOC_ROOT_PREFIX/$VIRTUALHOST as the virtualhost folder? [Y/n] "
+	if [ -d $DOC_ROOT_PREFIX/$VIRTUALHOST ]; then
+		DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
+	else
+		nested_match=`find $DOC_ROOT_PREFIX -maxdepth $MAX_SEARCH_DEPTH -type d -name $VIRTUALHOST 2>/dev/null`
+
+		if [ -n "$nested_match" ]; then
+			if [ -d $nested_match ]; then
+				DOC_ROOT_FOLDER_MATCH=$nested_match
+			fi
+		else
+			DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
+		fi
+	fi
+
+	/bin/echo -n "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
 fi
 
 if [ -z "$BATCH_MODE" ]; then
@@ -718,106 +728,40 @@ case $resp in
 	;;
 
 	*)
-		if [ -z $DOC_ROOT_FOLDER_MATCH ]; then
-			if [ -d "$VIRTUALHOST" ]; then
-				if [ -d $VIRTUALHOST/public ]; then
-					/bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
-					if [ -z "$BATCH_MODE" ]; then
-						read response
-					else
-						response="Y"
-					fi
-					if checkyesno ${response} ; then
-						FOLDER=$VIRTUALHOST/public
-					else
-						FOLDER=$VIRTUALHOST
-					fi
-				elif [ -d $VIRTUALHOST/web ]; then
-					/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
-					if [ -z "$BATCH_MODE" ]; then
-						read response
-					else
-						response="Y"
-					fi
-					if checkyesno ${response} ; then
-						FOLDER=$VIRTUALHOST/web
-					else
-						FOLDER=$VIRTUALHOST
-					fi
-				fi
+		if [ -d $DOC_ROOT_FOLDER_MATCH/public ]; then
+			/bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
+			if [ -z "$BATCH_MODE" ]; then
+				read response
 			else
-				FOLDER=$VIRTUALHOST
+				response="n"
 			fi
-		else
-			if [ -d "$DOC_ROOT_FOLDER_MATCH/public" ]; then
-				/bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
-				if [ -z "$BATCH_MODE" ]; then
-					read response
-				else
-					response="Y"
-				fi
-
-				if checkyesno ${response} ; then
-					FOLDER=$DOC_ROOT_FOLDER_MATCH/public
-				else
-					FOLDER=$DOC_ROOT_FOLDER_MATCH
-				fi
-			elif [ -d "$DOC_ROOT_FOLDER_MATCH/web" ]; then
-				/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
-				if [ -z "$BATCH_MODE" ]; then
-					read response
-				else
-					response="Y"
-				fi
-
-				if checkyesno ${response} ; then
-					FOLDER=$DOC_ROOT_FOLDER_MATCH/web
-				else
-					FOLDER=$DOC_ROOT_FOLDER_MATCH
-				fi
+			if checkyesno ${response} ; then
+				FOLDER=$DOC_ROOT_FOLDER_MATCH/public
 			else
 				FOLDER=$DOC_ROOT_FOLDER_MATCH
 			fi
-
+		elif [ -d $DOC_ROOT_FOLDER_MATCH/web ]; then
+			/bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
+			if [ -z "$BATCH_MODE" ]; then
+				read response
+			else
+				response="n"
+			fi
+			if checkyesno ${response} ; then
+				FOLDER=$DOC_ROOT_FOLDER_MATCH/web
+			else
+				FOLDER=$DOC_ROOT_FOLDER_MATCH
+			fi
+		else
+			FOLDER=$DOC_ROOT_FOLDER_MATCH
 		fi
 	;;
 esac
 
 # Create the folder if we need to...
-if [ ! -d "${DOC_ROOT_PREFIX}/${FOLDER}" ]; then
-	/bin/echo -n "  + Creating folder $DOC_ROOT_PREFIX/$FOLDER... "
-	# su $USER -c "mkdir -p $DOC_ROOT_PREFIX/$FOLDER"
-	mkdir -p "${DOC_ROOT_PREFIX}/${FOLDER}"
-
-	# If $FOLDER is deeper than one level, we need to fix permissions properly
-	case $FOLDER in
-		*/*)
-			subfolder=0
-		;;
-
-		*)
-			subfolder=1
-		;;
-	esac
-
-	if [ $subfolder != 1 ]; then
-		# Loop through all the subfolders, fixing permissions as we go
-		#
-		# Note to fellow shell-scripters: I realize that I could avoid doing
-		# this by just creating the folders with `su $USER -c mkdir ...`, but
-		# I didn't think of it until about five minutes after I wrote this. I
-		# decided to keep with this method so that I have a reference for myself
-		# of a loop that moves down a tree of folders, as it may come in handy
-		# in the future for me.
-		dir=$FOLDER
-		while [ $dir != "." ]; do
-			chown $USER "${DOC_ROOT_PREFIX}/${dir}"
-			dir=`dirname $dir`
-		done
-	else
-		chown $USER "${DOC_ROOT_PREFIX}/${FOLDER}"
-	fi
-
+if [ ! -d "${FOLDER}" ]; then
+	/bin/echo -n "  + Creating folder ${FOLDER}... "
+	su $USER -c "mkdir -p $FOLDER"
 	/bin/echo "done"
 fi
 
@@ -856,9 +800,9 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Create a default index.html if there isn't already one there
 #
-if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.php" ]; then
+if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
 
-	cat << __EOF >"${DOC_ROOT_PREFIX}/${FOLDER}/index.html"
+	cat << __EOF >"${FOLDER}/index.html"
 <html>
 <head>
 <title>Welcome to $VIRTUALHOST</title>
@@ -892,7 +836,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
   <table class="indent" border="0" cellspacing="3">
    <tr>
     <td><img src="/icons/dir.gif" width="20" height="22" border="0"></td>
-    <td><b><a href="file://$DOC_ROOT_PREFIX/$FOLDER">$DOC_ROOT_PREFIX/$FOLDER</b></a></td>
+    <td><b><a href="file://$FOLDER">$DOC_ROOT_PREFIX/$FOLDER</b></a></td>
    </tr>
   </table>
   </p>
@@ -913,7 +857,7 @@ if [ ! -e "${DOC_ROOT_PREFIX}/${FOLDER}/index.html" -a ! -e "${DOC_ROOT_PREFIX}/
 </body>
 </html>
 __EOF
-	chown $USER "${DOC_ROOT_PREFIX}/${FOLDER}/index.html"
+	chown $USER "${FOLDER}/index.html"
 
 fi
 
@@ -922,7 +866,7 @@ fi
 # Create a default virtualhost file
 #
 /bin/echo -n "+ Creating virtualhost file... "
-create_virtualhost $VIRTUALHOST "${DOC_ROOT_PREFIX}/${FOLDER}" $log
+create_virtualhost $VIRTUALHOST "${FOLDER}" $log
 /bin/echo "done"
 
 
