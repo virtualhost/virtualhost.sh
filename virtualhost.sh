@@ -12,7 +12,7 @@
 #
 # WHAT'S NEW IN v1.28
 #
-# - You can set NO_BROWSER="yes" to disable the browser launching. This
+# - You can set SKIP_BROWSER="yes" to disable the browser launching. This
 #   changes the BATCH_MODE behaviour from 1.26 which didn't launch the
 #   browser with BATCH_MODE="yes".
 #
@@ -233,7 +233,7 @@ MAX_SEARCH_DEPTH=2
 
 # Set to "yes" if you don't have a browser (headless) or don't want the site
 # to be launched in your browser after the virtualhost is setup.
-#NO_BROWSER="yes"
+#SKIP_BROWSER="yes"
 
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
@@ -919,7 +919,7 @@ __EOF
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Launch the new URL in the browser
 #
-if [ -z $NO_BROWSER ]; then
+if [ -z $SKIP_BROWSER ]; then
   /bin/echo -n "Launching virtualhost... "
   sleep 1
   curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
