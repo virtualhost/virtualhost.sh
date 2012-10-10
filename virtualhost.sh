@@ -117,7 +117,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.26"
+version="1.27"
 #
 
 # No point going any farther if we're not running correctly...
