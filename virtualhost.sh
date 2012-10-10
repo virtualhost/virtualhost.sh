@@ -125,6 +125,7 @@ if [ `whoami` != 'root' ]; then
 	echo "virtualhost.sh requires super-user privileges to work."
 	echo "Enter your password to continue..."
 	sudo $0 $* || exit 1
+	exit 0
 fi
 
 if [ "$SUDO_USER" = "root" ]; then
