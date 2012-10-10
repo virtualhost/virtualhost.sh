@@ -279,7 +279,7 @@ create_virtualhost()
 			access_log="${log_folder_path}/access_log-$1"
 			error_log="${log_folder_path}/error_log-$1"
 		else
-			log_folder_path=$DOC_ROOT_PREFIX/$FOLDER/logs
+			log_folder_path=$FOLDER/logs
 			access_log="${log_folder_path}/access_log"
 			error_log="${log_folder_path}/error_log"
 		fi
@@ -287,6 +287,8 @@ create_virtualhost()
 			mkdir -p "${log_folder_path}"
 			chown $USER "${log_folder_path}"
 		fi
+		touch $access_log $error_log
+		chown $USER $access_log $error_log
 	fi
 	cat << __EOF >$APACHE_CONFIG/virtualhosts/$1
 # Created $date
