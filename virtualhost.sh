@@ -10,11 +10,21 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
-# CHANGES SINCE v1.24
+# WHAT'S NEW IN v1.27
+#
+# - When looking for a document root, use find to traverse into the
+#   DOC_ROOT_PREFIX folder to a maximum depth of MAX_SEARCH_DEPTH.
+#
+# WHAT'S NEW IN v1.26
+#
+# - Added BATCH_MODE setting to auto-answer questions (Github issue #19)
+# - Added SKIP_VERSION_CHECK setting to skip the version check.
+#
+# WHAT'S NEW IN v1.25
 #
 # - Added --list option to list any virtualhosts that have been setup
 #
-# CHANGES SINCE v1.23 (courtesy of http://github.com/aersoy)
+# WHAT'S NEW IN v1.24 (courtesy of http://github.com/aersoy)
 #
 # - Detect Symfony projects;
 # - Changes to deleting virtual hosts:
@@ -24,14 +34,14 @@
 # - Allow for other browsers such as Google Chrome to be used when opening up
 #   the virtual host after it's completed.
 #
-# CHANGES SINCE v1.22
+# WHAT'S NEW IN v1.23
 # - Fix a bug when automatically rerunning script using sudo.
 #   (Issue #11 reported and fixed by Jake Smith <Jake.Smith92>)
 # - Fix a bug that prevented the document root from being deleted when a virtual
 #   host was deleted.
 #   (Issue #12 reported and fixed by Jake Smith <Jake.Smith92>)
 #
-# CHANGES SINCE v1.21
+# WHAT'S NEW IN v1.22
 # - It is now possible to use this script in environments like FreeBSD. Some
 #   new configuration variables support this such as SKIP_ETC_HOSTS,
 #   HOME_PARTITION, and SKIP_DOCUMENT_ROOT_CHECK.
@@ -42,15 +52,15 @@
 # - Support spaces in your document root. (Issue #10 by ryanilg.creative)
 # - If you forget to run with sudo, you no longer have to re-run.
 #
-# CHANGES SINCE v1.20
+# WHAT'S NEW IN v1.21
 # - virtualhost.sh now checks to see if a newer version is available! Amazing!
 #
-# CHANGES SINCE v1.19
+# WHAT'S NEW IN v1.20
 # - [Issue #7] You can now have site-specific logs for each virtual host. See
 #   the configuration variables PROMPT_FOR_LOGS and ALWAYS_CREATE_LOGS for
 #   additional controls.
 #
-# CHANGES SINCE v1.18
+# WHAT'S NEW IN v1.19
 # - [Issue #1] On Leopard, the first request to the new virtual host would fail.
 #   Have remedied this by making the first request in the script, in addition to
 #   the sleep 1 command.
@@ -62,36 +72,36 @@
 #   group has remained. (Thanks to Matt Sephton for reporting and providing a
 #   patch!)
 #
-# CHANGES SINCE v1.17
+# WHAT'S NEW IN v1.18
 # - [Issue #2] Add a new option $OPEN_COMMAND to specify which app should be
 #   used when launching the virtual host. See below for examples.
 # - [Issue #3] Make sure sudo is used to run the command so that we know the
 #   actual user's user name.
 #
-# CHANGES SINCE v1.16
+# WHAT'S NEW IN v1.17
 # - You can now store any configuration values in ~/.virtualhost.sh.conf.
 #   This way, you can update the script without losing your settings.
 #
-# CHANGES SINCE v1.15
+# WHAT'S NEW IN v1.16
 # - Add feature to support a ServerAlias using a wildcard DNS host. See the
 #   Wiki at http://code.google.com/p/virtualhost-sh/wiki/Wildcard_Hosts
 #
-# CHANGES SINCE v1.14
+# WHAT'S NEW IN v1.15
 # - Fix a bug in host_exists() that caused it never to work (thanks to Daniel
 #   Jewett for finding that).
 #
-# CHANGES SINCE v1.13
+# WHAT'S NEW IN v1.14
 # - Fix check in /etc/hosts to better match the supplied virtualhost.
 # - Fix check for existing folder in your Sites folder.
 #
-# CHANGES SINCE v1.05
+# WHAT'S NEW IN v1.06
 # - Support for Leopard. In fact, this version only supports Leopard, and 1.05
 #   will be the last version for Tiger and below.
 #
-# CHANGES SINCE v1.04
+# WHAT'S NEW IN v1.05
 # - The $APACHECTL variable wasn't been used. (Thanks to Thomas of webtypes.com)
 #
-# CHANGES SINCE v1.03
+# WHAT'S NEW IN v1.04
 # - An oversight in the change in v1.03 caused the ownership to be incorrect for
 #   a tree of folders that was created. If your site folder is a few levels deep
 #   we now fix the ownership properly of each nested folder.  (Thanks again to
@@ -100,16 +110,16 @@
 # - Improved the confirmation page for when you create a new virtual host. Not
 #   only is it more informative, but it is also much more attractive.
 #
-# CHANGES SINCE v1.02
+# WHAT'S NEW IN v1.03
 # - When creating the website folder, we now create all the intermediate folders
 #   in the case where a user sets their folder to something like
 #   clients/project_a/mysite. (Thanks to Michael Allan for pointing this out.)
 #
-# CHANGES SINCE v1.01
+# WHAT'S NEW IN v1.02
 # - Allow for the configuration of the Apache configuration path and the path to
 #   apachectl.
 #
-# CHANGES SINCE v1.0
+# WHAT'S NEW IN v1.01
 # - Use absolute path to apachectl, as it looks like systems that were upgraded
 #   from Jaguar to Panther don't seem to have it in the PATH.
 #
