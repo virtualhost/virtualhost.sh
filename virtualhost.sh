@@ -886,8 +886,6 @@ create_virtualhost $VIRTUALHOST "${FOLDER}" $log
 if [ -x /usr/bin/dscacheutil ]; then
 	/bin/echo -n "+ Flushing cache... "
 	dscacheutil -flushcache
-	sleep 1
-	curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
 	/bin/echo "done"
 
 	dscacheutil -q host | grep -q $VIRTUALHOST
@@ -910,6 +908,8 @@ __EOF
 # Launch the new URL in the browser
 #
 /bin/echo -n "Launching virtualhost... "
+sleep 1
+curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
 open_command "http://$VIRTUALHOST:$APACHE_PORT/"
 /bin/echo "done"
 exit 1
