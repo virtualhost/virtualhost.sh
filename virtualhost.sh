@@ -907,9 +907,10 @@ __EOF
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Launch the new URL in the browser
 #
-/bin/echo -n "Launching virtualhost... "
-sleep 1
-curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
-open_command "http://$VIRTUALHOST:$APACHE_PORT/"
-/bin/echo "done"
-exit 1
+if [ -z $BATCH_MODE ]; then
+  /bin/echo -n "Launching virtualhost... "
+  sleep 1
+  curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
+  open_command "http://$VIRTUALHOST:$APACHE_PORT/"
+  /bin/echo "done"
+fi
