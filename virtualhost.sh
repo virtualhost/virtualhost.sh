@@ -10,6 +10,12 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# WHAT'S NEW IN v1.28
+#
+# - You can set NO_BROWSER="yes" to disable the browser launching. This
+#   changes the BATCH_MODE behaviour from 1.26 which didn't launch the
+#   browser with BATCH_MODE="yes".
+#
 # WHAT'S NEW IN v1.27
 #
 # - When looking for a document root, use find to traverse into the
@@ -127,7 +133,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.27"
+version="1.28"
 #
 
 # No point going any farther if we're not running correctly...
@@ -224,6 +230,10 @@ APACHE_PORT="80"
 # By default, we will go two levels deep so that it doesn't take too long. If
 # you have a really complex structure, you may need to increase this.
 MAX_SEARCH_DEPTH=2
+
+# Set to "yes" if you don't have a browser (headless) or don't want the site
+# to be launched in your browser after the virtualhost is setup.
+#NO_BROWSER="yes"
 
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
@@ -907,7 +917,7 @@ __EOF
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Launch the new URL in the browser
 #
-if [ -z $BATCH_MODE ]; then
+if [ -z $NO_BROWSER ]; then
   /bin/echo -n "Launching virtualhost... "
   sleep 1
   curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
