@@ -706,15 +706,20 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Ask the user where they would like to put the files for this virtual host
 #
-/bin/echo "+ Checking for an existing document root to use..."
+/bin/echo "+ Looking in $DOC_ROOT_PREFIX for an existing document root to use..."
 
 # See if we can find an appropriate folder
-if ls -1 $DOC_ROOT_PREFIX | grep -q -e ^$VIRTUALHOST; then
+if ls -1 $DOC_ROOT_PREFIX | grep -q -e "^$VIRTUALHOST"; then
 	DOC_ROOT_FOLDER_MATCH=`ls -1 $DOC_ROOT_PREFIX | grep -e ^$VIRTUALHOST | head -n 1`
 else
 	if [ -d $DOC_ROOT_PREFIX/$VIRTUALHOST ]; then
 		DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
 	else
+    if [ $MAX_SEARCH_DEPTH -eq 0 ]; then
+      /bin/echo -n " searching with no a maximum depth. This could take a really long time..."
+    else
+      /bin/echo -n " searching to a maximum directory depth of $MAX_SEARCH_DEPTH. This could take some time..."
+    fi
 		nested_match=`find $DOC_ROOT_PREFIX -maxdepth $MAX_SEARCH_DEPTH -type d -name $VIRTUALHOST 2>/dev/null`
 
 		if [ -n "$nested_match" ]; then
@@ -725,9 +730,9 @@ else
 			DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
 		fi
 	fi
-
-	/bin/echo -n "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
 fi
+
+/bin/echo -n "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
 
 if [ -z "$BATCH_MODE" ]; then
 	read resp
