@@ -715,15 +715,16 @@ fi
 # See if we can find an appropriate folder
 if ls -1 $DOC_ROOT_PREFIX | grep -q -e "^$VIRTUALHOST"; then
 	DOC_ROOT_FOLDER_MATCH=`ls -1 $DOC_ROOT_PREFIX | grep -e ^$VIRTUALHOST | head -n 1`
+	DOC_ROOT_FOLDER_MATCH="${DOC_ROOT_PREFIX}/${DOC_ROOT_FOLDER_MATCH}"
 else
 	if [ -d $DOC_ROOT_PREFIX/$VIRTUALHOST ]; then
 		DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
 	else
-    if [ $MAX_SEARCH_DEPTH -eq 0 ]; then
-      /bin/echo -n " searching with no a maximum depth. This could take a really long time..."
-    else
-      /bin/echo -n " searching to a maximum directory depth of $MAX_SEARCH_DEPTH. This could take some time..."
-    fi
+		if [ $MAX_SEARCH_DEPTH -eq 0 ]; then
+			/bin/echo -n " searching with no a maximum depth. This could take a really long time..."
+		else
+			/bin/echo -n " searching to a maximum directory depth of $MAX_SEARCH_DEPTH. This could take some time..."
+		fi
 		nested_match=`find $DOC_ROOT_PREFIX -maxdepth $MAX_SEARCH_DEPTH -type d -name $VIRTUALHOST 2>/dev/null`
 
 		if [ -n "$nested_match" ]; then
