@@ -10,6 +10,10 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# WHAT'S NEW IN v1.29
+#
+# - Bugfix to show hidden prompt.
+#
 # WHAT'S NEW IN v1.28
 #
 # - You can set SKIP_BROWSER="yes" to disable the browser launching. This
@@ -133,7 +137,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.28"
+version="1.29"
 #
 
 # No point going any farther if we're not running correctly...
