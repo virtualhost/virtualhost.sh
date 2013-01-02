@@ -10,6 +10,10 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# WHAT'S NEW IN v1.30
+#
+# - Fix deleting hosts when SKIP_ETC_HOSTS="yes"
+#
 # WHAT'S NEW IN v1.29
 #
 # - Bugfix to show hidden prompt.
@@ -137,7 +141,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.29"
+version="1.30"
 #
 
 # No point going any farther if we're not running correctly...
@@ -491,87 +495,85 @@ fi
 # Delete the virtualhost if that's the requested action
 #
 if [ ! -z $DELETE ]; then
-  if host_exists $VIRTUALHOST ; then
-    /bin/echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
+  /bin/echo -n "- Deleting virtualhost, $VIRTUALHOST... Continue? [Y/n]: "
 
-    if [ -z "$BATCH_MODE" ]; then
-      read continue
-    else
-      continue="Y"
-      /bin/echo $continue
+  if [ -z "$BATCH_MODE" ]; then
+    read continue
+  else
+    continue="Y"
+    /bin/echo $continue
+  fi
+
+  case $continue in
+  n*|N*) exit
+  esac
+
+  if ! checkyesno ${SKIP_ETC_HOSTS}; then
+    /bin/echo -n "  - Removing $VIRTUALHOST from /etc/hosts... "
+
+    cat /etc/hosts | grep -v $VIRTUALHOST > /tmp/hosts.tmp
+
+    if [ -s /tmp/hosts.tmp ]; then
+      mv /tmp/hosts.tmp /etc/hosts
     fi
+    /bin/echo "done"
+  fi
 
-    case $continue in
-    n*|N*) exit
-    esac
+  if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
+    DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
 
-    if ! checkyesno ${SKIP_ETC_HOSTS}; then
-      /bin/echo -n "  - Removing $VIRTUALHOST from /etc/hosts... "
+    if [ -d $DOCUMENT_ROOT ]; then
+      /bin/echo -n "  + Found DocumentRoot $DOCUMENT_ROOT. Delete this folder? [y/N]: "
 
-      cat /etc/hosts | grep -v $VIRTUALHOST > /tmp/hosts.tmp
-
-      if [ -s /tmp/hosts.tmp ]; then
-        mv /tmp/hosts.tmp /etc/hosts
+      if [ -z $BATCH_MODE ]; then
+        read resp
+      else
+        resp="n"
+        echo $resp
       fi
-      /bin/echo "done"
-    fi
 
-    if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
-      DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
-
-      if [ -d $DOCUMENT_ROOT ]; then
-        /bin/echo -n "  + Found DocumentRoot $DOCUMENT_ROOT. Delete this folder? [y/N]: "
-
-        if [ -z $BATCH_MODE ]; then
-          read resp
+      case $resp in
+      y*|Y*)
+        /bin/echo -n "  - Deleting folder... "
+        if rm -rf "${DOCUMENT_ROOT}" ; then
+          /bin/echo "done"
         else
-          resp="n"
-          echo $resp
+          /bin/echo "Could not delete $DOCUMENT_ROOT"
         fi
-
-        case $resp in
-        y*|Y*)
-          /bin/echo -n "  - Deleting folder... "
-          if rm -rf "${DOCUMENT_ROOT}" ; then
-            /bin/echo "done"
-          else
-            /bin/echo "Could not delete $DOCUMENT_ROOT"
-          fi
-        ;;
-        esac
-      fi
-
-      LOG_FILES=`grep "CustomLog\|ErrorLog" $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
-      if [ ! -z "$LOG_FILES" ]; then
-        /bin/echo -n "  + Delete logs? [y/N]: "
-
-        if [ -z BATCH_MODE ]; then
-          read resp
-        else
-          resp="n"
-          echo $resp
-        fi
-
-        case $resp in
-        y*|Y*)
-          /bin/echo -n "  - Deleting logs... "
-          if rm -f ${LOG_FILES} ; then
-            /bin/echo "done"
-          else
-            /bin/echo "Could not delete $LOG_FILES"
-          fi
-        ;;
-        esac
-      fi
-
-      /bin/echo -n "  - Deleting virtualhost file, $APACHE_CONFIG/virtualhosts/$VIRTUALHOST... "
-      rm $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
-      /bin/echo "done"
-
-      /bin/echo -n "+ Restarting Apache... "
-      $APACHECTL graceful 1>/dev/null 2>/dev/null
-      /bin/echo "done"
+      ;;
+      esac
     fi
+
+    LOG_FILES=`grep "CustomLog\|ErrorLog" $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
+    if [ ! -z "$LOG_FILES" ]; then
+      /bin/echo -n "  + Delete logs? [y/N]: "
+
+      if [ -z BATCH_MODE ]; then
+        read resp
+      else
+        resp="n"
+        echo $resp
+      fi
+
+      case $resp in
+      y*|Y*)
+        /bin/echo -n "  - Deleting logs... "
+        if rm -f ${LOG_FILES} ; then
+          /bin/echo "done"
+        else
+          /bin/echo "Could not delete $LOG_FILES"
+        fi
+      ;;
+      esac
+    fi
+
+    /bin/echo -n "  - Deleting virtualhost file, $APACHE_CONFIG/virtualhosts/$VIRTUALHOST... "
+    rm $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
+    /bin/echo "done"
+
+    /bin/echo -n "+ Restarting Apache... "
+    $APACHECTL graceful 1>/dev/null 2>/dev/null
+    /bin/echo "done"
   else
     /bin/echo "- Virtualhost $VIRTUALHOST does not currently exist. Aborting..."
     exit 1
