@@ -398,7 +398,6 @@ version_check()
         mv -f $TMP_UPDATE_FILE $0
 
         exec $0 $*
-        exit
       ;;
 
       *)
