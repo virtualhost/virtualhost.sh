@@ -869,7 +869,7 @@ if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
   <table class="indent" border="0" cellspacing="3">
    <tr>
     <td><img src="/icons/dir.gif" width="20" height="22" border="0"></td>
-    <td><b><a href="file://$FOLDER">$DOC_ROOT_PREFIX/$FOLDER</b></a></td>
+    <td><b><a href="file://$FOLDER">$FOLDER</b></a></td>
    </tr>
   </table>
   </p>
