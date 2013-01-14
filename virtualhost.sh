@@ -374,30 +374,33 @@ version_check()
         UPDATE_URL="https://raw.github.com/pgib/virtualhost.sh/$current_version/virtualhost.sh"
         TMP_UPDATE_FILE=$(mktemp /tmp/virtualhost.sh.update.XXXXXX)
 
+        OS=$(uname -s)
+        if [ $OS = "Darwin" -o $OS = "FreeBSD" ]; then
+          # Mac OS X or FreeBSD
+          OCTAL_MODE=$(stat -f '%p' $0)
+        elif [ $OS = "Linux" ]; then
+          # Linux
+          OCTAL_MODE=$(stat -c '%a' $0)
+        else
+          /bin/echo "Unsupported OS - Auto-update cannot continue."
+          /bin/echo "Please visit https://github.com/pgib/virtualhost.sh to get the latest and greatest."
+          return
+        fi
+
         if [[ ! -w $0 ]]; then
-          echo "You don't have permission to write on file $0."
-          echo "Run as ROOT!"
+          /bin/echo "You don't have permission to write on file $0."
+          /bin/echo "Run as ROOT!"
           exit 1
         fi
 
         curl --silent --output $TMP_UPDATE_FILE $UPDATE_URL
-
-        OS=$(uname -s)
-        if [[ $OS == "Darwin" ]]; then
-          # Mac
-          OCTAL_MODE=$(stat -f '%p' $0)
-        elif [[ $OS == "Linux" ]]; then
-          # Linux
-          OCTAL_MODE=$(stat -c '%a' $0)
-        else
-          echo "Unsupported OS"
-        fi
 
         chmod $OCTAL_MODE $TMP_UPDATE_FILE
 
         mv -f $TMP_UPDATE_FILE $0
 
         exec $0 $*
+        exit 0
       ;;
 
       *)
