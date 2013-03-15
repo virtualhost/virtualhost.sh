@@ -700,6 +700,11 @@ esac
 if ! checkyesno ${SKIP_ETC_HOSTS}; then
   if ! host_exists $VIRTUALHOST ; then
 
+    x=$(tail -c 1 /etc/hosts)
+    if [ "$x" != "" ]
+    then echo >> /etc/hosts
+    fi
+    
     /bin/echo "Creating a virtualhost for $VIRTUALHOST..."
     /bin/echo -n "+ Adding $VIRTUALHOST to /etc/hosts... "
     /bin/echo "$IP_ADDRESS  $1" >> /etc/hosts
