@@ -752,7 +752,7 @@ case $resp in
   n*|N*)
     while : ; do
       if [ -z "$FOLDER" ]; then
-        /bin/echo -n "  - Enter new folder name (located in Sites): "
+        /bin/echo -n "  - Enter new folder name (located in $DOC_ROOT_PREFIX): "
         read FOLDER
       else
         break
