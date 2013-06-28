@@ -335,7 +335,7 @@ _EOT
     echo
     echo "Creating a virtualhost for $VIRTUALHOST..."
     echo -n "+ Adding $VIRTUALHOST to /etc/host... "
-    echo "$IP_ADDRESS\t$VIRTUALHOST" >> /etc/hosts
+    echo -e "$IP_ADDRESS\t$VIRTUALHOST" >> /etc/hosts
     echo "done"
 fi
 
