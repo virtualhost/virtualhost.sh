@@ -209,6 +209,8 @@ ALWAYS_CREATE_LOGS="yes"
 # By default, log files will be created in DOCUMENT_ROOT/logs. If you wish to
 # override this to a static location, you can do so here.
 #LOG_FOLDER="/var/log/httpd"
+# If you want your logs in your document root, uncomment the following
+#LOG_FOLDER="__DOCUMENT_ROOT__/logs"
 
 # If you have an atypical setup, and you don't need or want entries in your
 # /etc/hosts file, you can set the following option to "yes".
@@ -282,7 +284,9 @@ create_virtualhost()
     log="#"
   else
     log=""
-    if [ ! -z $LOG_FOLDER ]; then
+    if [ -n "$LOG_FOLDER" ]; then
+      # would love a pure shell way to do this, but sed makes it oh so hard
+      LOG_FOLDER=`ruby -e "puts '$LOG_FOLDER'.gsub(/__DOCUMENT_ROOT__/, '$2')"`
       log_folder_path=$LOG_FOLDER
       access_log="${log_folder_path}/access_log-$1"
       error_log="${log_folder_path}/error_log-$1"
@@ -816,6 +820,7 @@ if checkyesno ${PROMPT_FOR_LOGS}; then
 
     y*|Y*)
       log="1"
+      LOG_FOLDER="$FOLDER/logs"
     ;;
 
     *)
