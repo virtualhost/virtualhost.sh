@@ -766,11 +766,12 @@ case $resp in
 
   *)
     if [ -d $DOC_ROOT_FOLDER_MATCH/public ]; then
-      /bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
+      /bin/echo -n "  - Found a public folder suggesting a Rails/Rack project. Use as DocumentRoot? [Y/n] "
       if [ -z "$BATCH_MODE" ]; then
         read response
       else
-        response="n"
+        response="Y"
+        echo $response
       fi
       if checkyesno ${response} ; then
         FOLDER=$DOC_ROOT_FOLDER_MATCH/public
@@ -778,11 +779,12 @@ case $resp in
         FOLDER=$DOC_ROOT_FOLDER_MATCH
       fi
     elif [ -d $DOC_ROOT_FOLDER_MATCH/web ]; then
-      /bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
+      /bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [Y/n] "
       if [ -z "$BATCH_MODE" ]; then
         read response
       else
-        response="n"
+        response="Y"
+        echo $response
       fi
       if checkyesno ${response} ; then
         FOLDER=$DOC_ROOT_FOLDER_MATCH/web
