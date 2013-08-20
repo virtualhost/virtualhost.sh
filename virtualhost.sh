@@ -286,7 +286,7 @@ create_virtualhost()
     log=""
     if [ -n "$LOG_FOLDER" ]; then
       # would love a pure shell way to do this, but sed makes it oh so hard
-      LOG_FOLDER=`ruby -e "puts '$LOG_FOLDER'.gsub(/__DOCUMENT_ROOT__/, '$2')"`
+      LOG_FOLDER=`ruby -e "puts File.expand_path('$LOG_FOLDER'.gsub(/__DOCUMENT_ROOT__/, '$2'))"`
       log_folder_path=$LOG_FOLDER
       access_log="${log_folder_path}/access_log-$1"
       error_log="${log_folder_path}/error_log-$1"
