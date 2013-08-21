@@ -467,7 +467,7 @@ else
     if [ -z $2 ]; then
       usage
     else
-      VIRTUALHOST=$2
+      VIRTUALHOST=`echo $2|sed -e 's/\///g'`
       DELETE=0
     fi
   elif [ "$1" = "--list" ]; then
@@ -485,7 +485,7 @@ else
 
     exit
   else
-    VIRTUALHOST=$1
+    VIRTUALHOST=`echo $1|sed -e 's/\///g'`
   fi
 fi
 
