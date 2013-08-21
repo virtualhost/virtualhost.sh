@@ -10,6 +10,14 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# WHAT'S NEW IN v1.31
+#
+# - Fix some issues with BATCH_MODE (eg. Rails/Symphony detection)
+# - LOG_FOLDER can have a __DOCUMENT_ROOT__ placeholder for site-specific
+#   locations. eg. LOG_FOLDER="__DOCUMENT_ROOT__/../logs"
+# - Strip out a trailing slash in the virtual host that can show up when
+#   tab-completion is used in the shell.
+#
 # WHAT'S NEW IN v1.30
 #
 # - Fix deleting hosts when SKIP_ETC_HOSTS="yes"
@@ -137,18 +145,17 @@
 # - Use absolute path to apachectl, as it looks like systems that were upgraded
 #   from Jaguar to Panther don't seem to have it in the PATH.
 #
-#
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.30"
+version="1.31"
 #
 
 # No point going any farther if we're not running correctly...
 if [ `whoami` != 'root' ]; then
   echo "virtualhost.sh requires super-user privileges to work."
   echo "Enter your password to continue..."
-  sudo $0 $* || exit 1
+  sudo "$0" $* || exit 1
   exit 0
 fi
 
@@ -209,6 +216,8 @@ ALWAYS_CREATE_LOGS="yes"
 # By default, log files will be created in DOCUMENT_ROOT/logs. If you wish to
 # override this to a static location, you can do so here.
 #LOG_FOLDER="/var/log/httpd"
+# If you want your logs in your document root, uncomment the following
+#LOG_FOLDER="__DOCUMENT_ROOT__/logs"
 
 # If you have an atypical setup, and you don't need or want entries in your
 # /etc/hosts file, you can set the following option to "yes".
@@ -282,7 +291,9 @@ create_virtualhost()
     log="#"
   else
     log=""
-    if [ ! -z $LOG_FOLDER ]; then
+    if [ -n "$LOG_FOLDER" ]; then
+      # would love a pure shell way to do this, but sed makes it oh so hard
+      LOG_FOLDER=`ruby -e "puts File.expand_path('$LOG_FOLDER'.gsub(/__DOCUMENT_ROOT__/, '$2'))"`
       log_folder_path=$LOG_FOLDER
       access_log="${log_folder_path}/access_log-$1"
       error_log="${log_folder_path}/error_log-$1"
@@ -463,7 +474,7 @@ else
     if [ -z $2 ]; then
       usage
     else
-      VIRTUALHOST=$2
+      VIRTUALHOST=`echo $2|sed -e 's/\///g'`
       DELETE=0
     fi
   elif [ "$1" = "--list" ]; then
@@ -481,12 +492,12 @@ else
 
     exit
   else
-    VIRTUALHOST=$1
+    VIRTUALHOST=`echo $1|sed -e 's/\///g'`
   fi
 fi
 
 # Test that the virtualhost name is valid (starts with a number or letter)
-if ! /bin/echo $VIRTUALHOST | grep -q -E '^[A-Za-z0-9]+' ; then
+if ! /bin/echo $VIRTUALHOST | grep -q -E '^[A-Za-z0-9]+[A-Za-z0-9-]+$' ; then
   /bin/echo "Sorry, '$VIRTUALHOST' is not a valid host name to use. It must start with a letter or number."
   exit 1
 fi
@@ -762,11 +773,12 @@ case $resp in
 
   *)
     if [ -d $DOC_ROOT_FOLDER_MATCH/public ]; then
-      /bin/echo -n "  - Found a public folder suggesting a Rails/Merb/Rack project. Use as DocumentRoot? [y/N] "
+      /bin/echo -n "  - Found a public folder suggesting a Rails/Rack project. Use as DocumentRoot? [Y/n] "
       if [ -z "$BATCH_MODE" ]; then
         read response
       else
-        response="n"
+        response="Y"
+        echo $response
       fi
       if checkyesno ${response} ; then
         FOLDER=$DOC_ROOT_FOLDER_MATCH/public
@@ -774,11 +786,12 @@ case $resp in
         FOLDER=$DOC_ROOT_FOLDER_MATCH
       fi
     elif [ -d $DOC_ROOT_FOLDER_MATCH/web ]; then
-      /bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [y/N] "
+      /bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [Y/n] "
       if [ -z "$BATCH_MODE" ]; then
         read response
       else
-        response="n"
+        response="Y"
+        echo $response
       fi
       if checkyesno ${response} ; then
         FOLDER=$DOC_ROOT_FOLDER_MATCH/web
@@ -816,6 +829,7 @@ if checkyesno ${PROMPT_FOR_LOGS}; then
 
     y*|Y*)
       log="1"
+      LOG_FOLDER="$FOLDER/logs"
     ;;
 
     *)
