@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Virtualhost.sh
 #
@@ -376,37 +376,10 @@ esac
 # Create the folder if we need to...
 if [ ! -d $DOC_ROOT_PREFIX/$FOLDER ]; then
     echo -n "  + Creating folder $DOC_ROOT_PREFIX/$FOLDER... "
-    # su $USER -c "mkdir -p $DOC_ROOT_PREFIX/$FOLDER"
-    mkdir -p $DOC_ROOT_PREFIX/$FOLDER
+    su $USER -c "mkdir -p $DOC_ROOT_PREFIX/$FOLDER"
 
     # If $FOLDER is deeper than one level, we need to fix permissions properly
-    case $FOLDER in
-        */*)
-            subfolder=0
-            ;;
-
-        *)
-            subfolder=1
-            ;;
-    esac
-
-    if [ $subfolder != 1 ]; then
-        # Loop through all the subfolders, fixing permissions as we go
-        #
-        # Note to fellow shell-scripters: I realize that I could avoid doing
-        # this by just creating the folders with `su $USER -c mkdir ...`, but
-        # I didn't think of it until about five minutes after I wrote this. I
-        # decided to keep with this method so that I have a reference for myself
-        # of a loop that moves down a tree of folders, as it may come in handy
-        # in the future for me.
-        dir=$FOLDER
-        while [ $dir != "." ]; do
-            chown $USER:$OWNER_GROUP $DOC_ROOT_PREFIX/$dir
-            dir=`dirname $dir`
-        done
-    else
-        chown $USER:$OWNER_GROUP $DOC_ROOT_PREFIX/$FOLDER
-    fi
+    chown -R $USER:$OWNER_GROUP $DOC_ROOT_PREFIX/$FOLDER
 
     echo "done"
 fi
@@ -415,8 +388,9 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Create a default index.html if there isn't already one there
 #
-if [ $CREATE_INDEX == 'yes']; then
+if [ $CREATE_INDEX == 'yes' ]; then
     if [ ! -e $DOC_ROOT_PREFIX/$FOLDER/index.html -a ! -e $DOC_ROOT_PREFIX/$FOLDER/index.php ]; then
+        echo -n "+ Creating 'index.html'... "
 
         cat << __EOF >$DOC_ROOT_PREFIX/$FOLDER/index.html
         <html>
@@ -473,6 +447,7 @@ if [ $CREATE_INDEX == 'yes']; then
             </html>
 __EOF
             chown $USER:$OWNER_GROUP $DOC_ROOT_PREFIX/$FOLDER/index.html
+            echo "done"
 
         fi
     fi
