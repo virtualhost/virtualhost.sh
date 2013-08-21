@@ -490,7 +490,7 @@ else
 fi
 
 # Test that the virtualhost name is valid (starts with a number or letter)
-if ! /bin/echo $VIRTUALHOST | grep -q -E '^[A-Za-z0-9]+' ; then
+if ! /bin/echo $VIRTUALHOST | grep -q -E '^[A-Za-z0-9]+[A-Za-z0-9-]+$' ; then
   /bin/echo "Sorry, '$VIRTUALHOST' is not a valid host name to use. It must start with a letter or number."
   exit 1
 fi
