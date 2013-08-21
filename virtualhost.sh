@@ -10,6 +10,14 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# WHAT'S NEW IN v1.31
+#
+# - Fix some issues with BATCH_MODE (eg. Rails/Symphony detection)
+# - LOG_FOLDER can have a __DOCUMENT_ROOT__ placeholder for site-specific
+#   locations. eg. LOG_FOLDER="__DOCUMENT_ROOT__/../logs"
+# - Strip out a trailing slash in the virtual host that can show up when
+#   tab-completion is used in the shell.
+#
 # WHAT'S NEW IN v1.30
 #
 # - Fix deleting hosts when SKIP_ETC_HOSTS="yes"
@@ -137,11 +145,10 @@
 # - Use absolute path to apachectl, as it looks like systems that were upgraded
 #   from Jaguar to Panther don't seem to have it in the PATH.
 #
-#
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.30"
+version="1.31"
 #
 
 # No point going any farther if we're not running correctly...
