@@ -753,7 +753,7 @@ else
   fi
 fi
 
-/bin/echo -n "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
+/bin/echo "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
 
 if [ -z "$BATCH_MODE" ]; then
   read resp
