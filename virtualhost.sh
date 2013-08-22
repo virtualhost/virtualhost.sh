@@ -170,7 +170,7 @@ fi
 # and you wish to setup a "live" virtualhost, you can change the following IP
 # address to the IP address of your machine.
 #
-IP_ADDRESS="127.0.0.1"
+: ${IP_ADDRESS:="127.0.0.1"}
 
 # By default, this script places files in /Users/[you]/Sites. If you would like
 # to change this, like to how Apple does things by default, uncomment the
@@ -180,12 +180,12 @@ IP_ADDRESS="127.0.0.1"
 
 # Configure the apache-related paths
 #
-APACHE_CONFIG="/private/etc/apache2"
-APACHECTL="/usr/sbin/apachectl"
+: ${APACHE_CONFIG:="/private/etc/apache2"}
+: ${APACHECTL:="/usr/sbin/apachectl"}
 
 # If you wish to change the default application that gets launched after the
 # virtual host is created, define it here:
-OPEN_COMMAND="/usr/bin/open"
+: ${OPEN_COMMAND:="/usr/bin/open"}
 
 # If you want to use a different browser than Safari, define it here:
 #BROWSER="Firefox"
@@ -207,11 +207,11 @@ OPEN_COMMAND="/usr/bin/open"
 # A feature to specify a custom log location within your site's document root
 # was requested, and so you will be prompted about this when you create a new
 # virtual host. If you do not want to be prompted, set the following to "no":
-PROMPT_FOR_LOGS="no"
+: ${PROMPT_FOR_LOGS:="no"}
 
 # If you do not want to be prompted, but you do always want to have the site-
 # specific logs folder, set PROMPT_FOR_LOGS="no" and enable this:
-ALWAYS_CREATE_LOGS="yes"
+: ${ALWAYS_CREATE_LOGS:="yes"}
 
 # By default, log files will be created in DOCUMENT_ROOT/logs. If you wish to
 # override this to a static location, you can do so here.
@@ -221,18 +221,18 @@ ALWAYS_CREATE_LOGS="yes"
 
 # If you have an atypical setup, and you don't need or want entries in your
 # /etc/hosts file, you can set the following option to "yes".
-SKIP_ETC_HOSTS="no"
+: ${SKIP_ETC_HOSTS:="no"}
 
 # If you are running this script on a platform other than Mac OS X, your home
 # partition is going to be different. If so, change it here.
-HOME_PARTITION="/Users"
+: ${HOME_PARTITION:="/Users"}
 
 # If your environment has a different default DocumentRoot, and you don't want
 # to be nagged about "fixing" your DocumentRoot, set this to "yes".
-SKIP_DOCUMENT_ROOT_CHECK="no"
+: ${SKIP_DOCUMENT_ROOT_CHECK:="no"}
 
 # If Apache works on a different port than the default 80, set it here
-APACHE_PORT="80"
+: ${APACHE_PORT:="80"}
 
 # Batch mode (all prompting will assume Yes). Any value will activate this. Can
 # be set here, in ~/.virtualhost.sh.conf, or on the command line, like:
@@ -246,7 +246,7 @@ APACHE_PORT="80"
 # We now will search your $DOC_ROOT_PREFIX for a matching subfolder using find.
 # By default, we will go two levels deep so that it doesn't take too long. If
 # you have a really complex structure, you may need to increase this.
-MAX_SEARCH_DEPTH=2
+: ${MAX_SEARCH_DEPTH:="2"}
 
 # Set to "yes" if you don't have a browser (headless) or don't want the site
 # to be launched in your browser after the virtualhost is setup.
@@ -254,7 +254,7 @@ MAX_SEARCH_DEPTH=2
 
 # By default, we'll write out an index.html file in the DOCUMENT_ROOT if one
 # is not already present.
-CREATE_INDEX="yes"
+: ${CREATE_INDEX:="yes"}
 
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
