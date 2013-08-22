@@ -267,7 +267,7 @@ fi
 
 host_exists()
 {
-  if grep -q -e "^$IP_ADDRESS  $1$" /etc/hosts ; then
+  if grep -q -e "^$IP_ADDRESS  $VIRTUALHOST$" /etc/hosts ; then
     return 0
   else
     return 1
@@ -286,7 +286,7 @@ open_command()
 create_virtualhost()
 {
   if [ ! -z $WILDCARD_ZONE ]; then
-    SERVER_ALIAS="ServerAlias $1.$WILDCARD_ZONE"
+    SERVER_ALIAS="ServerAlias $VIRTUALHOST.$WILDCARD_ZONE"
   else
     SERVER_ALIAS="#ServerAlias your.alias.here"
   fi
@@ -299,8 +299,8 @@ create_virtualhost()
       # would love a pure shell way to do this, but sed makes it oh so hard
       LOG_FOLDER=`ruby -e "puts File.expand_path('$LOG_FOLDER'.gsub(/__DOCUMENT_ROOT__/, '$2'))"`
       log_folder_path=$LOG_FOLDER
-      access_log="${log_folder_path}/access_log-$1"
-      error_log="${log_folder_path}/error_log-$1"
+      access_log="${log_folder_path}/access_log-$VIRTUALHOST"
+      error_log="${log_folder_path}/error_log-$VIRTUALHOST"
     else
       log_folder_path=$FOLDER/logs
       access_log="${log_folder_path}/access_log"
@@ -313,11 +313,11 @@ create_virtualhost()
     touch $access_log $error_log
     chown $USER $access_log $error_log
   fi
-  cat << __EOF >$APACHE_CONFIG/virtualhosts/$1
+  cat << __EOF >$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
 # Created $date
 <VirtualHost *:$APACHE_PORT>
   DocumentRoot "$2"
-  ServerName $1
+  ServerName $VIRTUALHOST
   $SERVER_ALIAS
 
   ScriptAlias /cgi-bin "$2/cgi-bin"
@@ -717,7 +717,7 @@ if ! checkyesno ${SKIP_ETC_HOSTS}; then
 
     /bin/echo "Creating a virtualhost for $VIRTUALHOST..."
     /bin/echo -n "+ Adding $VIRTUALHOST to /etc/hosts... "
-    /bin/echo "$IP_ADDRESS  $1" >> /etc/hosts
+    /bin/echo "$IP_ADDRESS  $VIRTUALHOST" >> /etc/hosts
     /bin/echo "done"
   fi
 fi
