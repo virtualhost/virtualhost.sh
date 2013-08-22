@@ -155,7 +155,7 @@ version="1.31"
 if [ `whoami` != 'root' ]; then
   echo "virtualhost.sh requires super-user privileges to work."
   echo "Enter your password to continue..."
-  sudo "$0" $* || exit 1
+  sudo -E "$0" $* || exit 1
   exit 0
 fi
 
