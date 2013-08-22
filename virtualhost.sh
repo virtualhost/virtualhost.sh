@@ -252,6 +252,10 @@ MAX_SEARCH_DEPTH=2
 # to be launched in your browser after the virtualhost is setup.
 #SKIP_BROWSER="yes"
 
+# By default, we'll write out an index.html file in the DOCUMENT_ROOT if one
+# is not already present.
+CREATE_INDEX="yes"
+
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
 # redo your own settings.
@@ -847,9 +851,10 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Create a default index.html if there isn't already one there
 #
-if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
-
-  cat << __EOF >"${FOLDER}/index.html"
+if checkyesno ${CREATE_INDEX}; then
+  if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
+    /bin/echo -n "+ Creating 'index.html'... "
+    cat << __EOF >"${FOLDER}/index.html"
 <html>
 <head>
 <title>Welcome to $VIRTUALHOST</title>
@@ -904,8 +909,9 @@ if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
 </body>
 </html>
 __EOF
-  chown $USER "${FOLDER}/index.html"
-
+    /bin/echo "done"
+    chown $USER "${FOLDER}/index.html"
+  fi
 fi
 
 
