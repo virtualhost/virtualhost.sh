@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Virtualhost.sh
 #
@@ -415,8 +415,9 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Create a default index.html if there isn't already one there
 #
-if [ $CREATE_INDEX == 'yes']; then
+if [ $CREATE_INDEX == 'yes' ]; then
     if [ ! -e $DOC_ROOT_PREFIX/$FOLDER/index.html -a ! -e $DOC_ROOT_PREFIX/$FOLDER/index.php ]; then
+        echo -n "+ Creating 'index.html'... "
 
         cat << __EOF >$DOC_ROOT_PREFIX/$FOLDER/index.html
         <html>
@@ -473,6 +474,7 @@ if [ $CREATE_INDEX == 'yes']; then
             </html>
 __EOF
             chown $USER:$OWNER_GROUP $DOC_ROOT_PREFIX/$FOLDER/index.html
+            echo "done"
 
         fi
     fi
