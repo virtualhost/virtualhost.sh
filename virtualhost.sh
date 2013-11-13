@@ -310,8 +310,7 @@ create_virtualhost()
   <Directory "$2">
     Options All
     AllowOverride All
-    Order allow,deny
-    Allow from all
+    Require all granted
   </Directory>
 
   ${log}CustomLog "${access_log}" combined
@@ -635,12 +634,12 @@ if [ ! -z $RENAME ]; then
     OLD_VIRTUALHOST_FILE=$APACHE_CONFIG/virtualhosts/$OLD_VIRTUALHOST
     NEW_VIRTUALHOST_FILE=$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
     DOCUMENT_ROOT=`grep ServerName $APACHE_CONFIG/virtualhosts/$OLD_VIRTUALHOST | awk '{print $2}' | tr -d '"'`
-    
+
     # Update log files ?
 
     # Update ServerName in virtualhost file
     /bin/echo -n "+ Create new virtualhost... "
-    
+
     if [ $DOCUMENT_ROOT -a $OLD_VIRTUALHOST_FILE ]; then
       sed "s/ServerName $OLD_VIRTUALHOST/ServerName $VIRTUALHOST/g" "$OLD_VIRTUALHOST_FILE" > "$NEW_VIRTUALHOST_FILE"
       # Rename virtualhost file
@@ -666,7 +665,7 @@ if [ ! -z $RENAME ]; then
         fi
       else
         /bin/echo "could not update virtualhost $OLD_VIRTUALHOST_FILE. Aborting..."
-      fi    
+      fi
     else
       /bin/echo "could not find $OLD_VIRTUALHOST. Aborting..."
       exit 1
