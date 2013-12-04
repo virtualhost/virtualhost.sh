@@ -51,6 +51,7 @@
 # and you wish to setup a "live" virtualhost, you can change the following '*'
 # address to the IP address of your machine.
  IP_ADDRESS="127.0.0.1"
+ IPv6_ADDRESS="::1"
 #
 # By default, this script places files in /home/[username]/Sites. If you would like
 # to change this uncomment the following line:
@@ -171,6 +172,7 @@ if [ ! -z $DELETE ]; then
         echo -n "  * Backing up current /etc/hosts as /etc/hosts.original..."
         cp /etc/hosts /etc/hosts.original
         sed "/$IP_ADDRESS\t$VIRTUALHOST/d" /etc/hosts > /etc/hosts2
+        sed "/$IPv6_ADDRESS\t$VIRTUALHOST/d" /etc/hosts2 > /etc/hosts2
         mv -f /etc/hosts2 /etc/hosts
         echo "done"
 
@@ -336,6 +338,7 @@ _EOT
     echo "Creating a virtualhost for $VIRTUALHOST..."
     echo -n "+ Adding $VIRTUALHOST to /etc/host... "
     echo -e "$IP_ADDRESS\t$VIRTUALHOST" >> /etc/hosts
+    echo -e "$IPv6_ADDRESS\t$VIRTUALHOST" >> /etc/hosts
     echo "done"
 fi
 
