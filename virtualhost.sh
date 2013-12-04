@@ -203,6 +203,7 @@ fi
 # address to the IP address of your machine.
 #
 : ${IP_ADDRESS:="127.0.0.1"}
+: ${IPV6_ADDRESS:="::1"}
 
 # By default, this script places files in /Users/[you]/Sites. If you would like
 # to change this, like to how Apple does things by default, uncomment the
@@ -771,6 +772,7 @@ if [ -d /etc/httpd/virtualhosts ]; then
       if ! checkyesno ${SKIP_ETC_HOSTS}; then
         if ! host_exists $host ; then
           /bin/echo "$IP_ADDRESS  $host" >> /etc/hosts
+          /bin/echo "$IPV6_ADDRESS  $host" >> /etc/hosts
         fi
       fi
       docroot=`grep DocumentRoot /etc/httpd/virtualhosts/$host | awk '{print $2}'`
@@ -813,6 +815,7 @@ if ! checkyesno ${SKIP_ETC_HOSTS}; then
     /bin/echo "Creating a virtualhost for $VIRTUALHOST..."
     /bin/echo -n "+ Adding $VIRTUALHOST to /etc/hosts... "
     /bin/echo "$IP_ADDRESS  $VIRTUALHOST" >> /etc/hosts
+    /bin/echo "$IPV6_ADDRESS  $VIRTUALHOST" >> /etc/hosts
     /bin/echo "done"
   fi
 fi
