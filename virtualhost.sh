@@ -455,7 +455,7 @@ fi
 usage()
 {
   cat << __EOT
-Usage: sudo virtualhost.sh <name>
+Usage: sudo virtualhost.sh <name> [<optional path>]
        sudo virtualhost.sh --list
        sudo virtualhost.sh --delete <name>
    where <name> is the one-word name you'd like to use. (e.g. mysite)
@@ -493,6 +493,7 @@ else
     exit
   else
     VIRTUALHOST=`echo $1|sed -e 's/\///g'`
+    FOLDER=`echo $2 | sed -e 's/\/*$//'`
   fi
 fi
 
@@ -721,88 +722,91 @@ fi
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Ask the user where they would like to put the files for this virtual host
+# if a document root hasn't been specified as a second argument.
 #
-/bin/echo "+ Looking in $DOC_ROOT_PREFIX for an existing document root to use..."
+if [ -z "$FOLDER" ]; then
+  /bin/echo "+ Looking in $DOC_ROOT_PREFIX for an existing document root to use..."
 
-# See if we can find an appropriate folder
-if ls -1 $DOC_ROOT_PREFIX | grep -q -e "^$VIRTUALHOST"; then
-  DOC_ROOT_FOLDER_MATCH=`ls -1 $DOC_ROOT_PREFIX | grep -e ^$VIRTUALHOST | head -n 1`
-  DOC_ROOT_FOLDER_MATCH="${DOC_ROOT_PREFIX}/${DOC_ROOT_FOLDER_MATCH}"
-else
-  if [ -d $DOC_ROOT_PREFIX/$VIRTUALHOST ]; then
-    DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
+  # See if we can find an appropriate folder
+  if ls -1 $DOC_ROOT_PREFIX | grep -q -e "^$VIRTUALHOST"; then
+    DOC_ROOT_FOLDER_MATCH=`ls -1 $DOC_ROOT_PREFIX | grep -e ^$VIRTUALHOST | head -n 1`
+    DOC_ROOT_FOLDER_MATCH="${DOC_ROOT_PREFIX}/${DOC_ROOT_FOLDER_MATCH}"
   else
-    if [ $MAX_SEARCH_DEPTH -eq 0 ]; then
-      /bin/echo -n " searching with no a maximum depth. This could take a really long time..."
-    else
-      /bin/echo -n " searching to a maximum directory depth of $MAX_SEARCH_DEPTH. This could take some time..."
-    fi
-    nested_match=`find $DOC_ROOT_PREFIX -maxdepth $MAX_SEARCH_DEPTH -type d -name $VIRTUALHOST 2>/dev/null`
-
-    if [ -n "$nested_match" ]; then
-      if [ -d $nested_match ]; then
-        DOC_ROOT_FOLDER_MATCH=$nested_match
-      fi
-    else
+    if [ -d $DOC_ROOT_PREFIX/$VIRTUALHOST ]; then
       DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
+    else
+      if [ $MAX_SEARCH_DEPTH -eq 0 ]; then
+        /bin/echo -n " searching with no a maximum depth. This could take a really long time..."
+      else
+        /bin/echo -n " searching to a maximum directory depth of $MAX_SEARCH_DEPTH. This could take some time..."
+      fi
+      nested_match=`find $DOC_ROOT_PREFIX -maxdepth $MAX_SEARCH_DEPTH -type d -name $VIRTUALHOST 2>/dev/null`
+
+      if [ -n "$nested_match" ]; then
+        if [ -d $nested_match ]; then
+          DOC_ROOT_FOLDER_MATCH=$nested_match
+        fi
+      else
+        DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
+      fi
     fi
   fi
-fi
 
 /bin/echo -n "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
 
-if [ -z "$BATCH_MODE" ]; then
-  read resp
-else
-  resp="Y"
-  echo $resp
+  if [ -z "$BATCH_MODE" ]; then
+    read resp
+  else
+    resp="Y"
+    echo $resp
+  fi
+
+  case $resp in
+
+    n*|N*)
+      while : ; do
+        if [ -z "$FOLDER" ]; then
+          /bin/echo -n "  - Enter new folder name (located in $DOC_ROOT_PREFIX): "
+          read FOLDER
+        else
+          break
+        fi
+      done
+    ;;
+
+    *)
+      if [ -d $DOC_ROOT_FOLDER_MATCH/public ]; then
+        /bin/echo -n "  - Found a public folder suggesting a Rails/Rack project. Use as DocumentRoot? [Y/n] "
+        if [ -z "$BATCH_MODE" ]; then
+          read response
+        else
+          response="Y"
+          echo $response
+        fi
+        if checkyesno ${response} ; then
+          FOLDER=$DOC_ROOT_FOLDER_MATCH/public
+        else
+          FOLDER=$DOC_ROOT_FOLDER_MATCH
+        fi
+      elif [ -d $DOC_ROOT_FOLDER_MATCH/web ]; then
+        /bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [Y/n] "
+        if [ -z "$BATCH_MODE" ]; then
+          read response
+        else
+          response="Y"
+          echo $response
+        fi
+        if checkyesno ${response} ; then
+          FOLDER=$DOC_ROOT_FOLDER_MATCH/web
+        else
+          FOLDER=$DOC_ROOT_FOLDER_MATCH
+        fi
+      else
+        FOLDER=$DOC_ROOT_FOLDER_MATCH
+      fi
+    ;;
+  esac
 fi
-
-case $resp in
-
-  n*|N*)
-    while : ; do
-      if [ -z "$FOLDER" ]; then
-        /bin/echo -n "  - Enter new folder name (located in $DOC_ROOT_PREFIX): "
-        read FOLDER
-      else
-        break
-      fi
-    done
-  ;;
-
-  *)
-    if [ -d $DOC_ROOT_FOLDER_MATCH/public ]; then
-      /bin/echo -n "  - Found a public folder suggesting a Rails/Rack project. Use as DocumentRoot? [Y/n] "
-      if [ -z "$BATCH_MODE" ]; then
-        read response
-      else
-        response="Y"
-        echo $response
-      fi
-      if checkyesno ${response} ; then
-        FOLDER=$DOC_ROOT_FOLDER_MATCH/public
-      else
-        FOLDER=$DOC_ROOT_FOLDER_MATCH
-      fi
-    elif [ -d $DOC_ROOT_FOLDER_MATCH/web ]; then
-      /bin/echo -n "  - Found a web folder suggesting a Symfony project. Use as DocumentRoot? [Y/n] "
-      if [ -z "$BATCH_MODE" ]; then
-        read response
-      else
-        response="Y"
-        echo $response
-      fi
-      if checkyesno ${response} ; then
-        FOLDER=$DOC_ROOT_FOLDER_MATCH/web
-      else
-        FOLDER=$DOC_ROOT_FOLDER_MATCH
-      fi
-    else
-      FOLDER=$DOC_ROOT_FOLDER_MATCH
-    fi
-  ;;
-esac
 
 # Create the folder if we need to...
 if [ ! -d "${FOLDER}" ]; then
