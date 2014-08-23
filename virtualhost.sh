@@ -321,8 +321,7 @@ create_virtualhost()
   <Directory "$2">
     Options All
     AllowOverride All
-    Order allow,deny
-    Allow from all
+    Require all granted
   </Directory>
 
   ${log}CustomLog "${access_log}" combined
