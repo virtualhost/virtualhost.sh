@@ -152,14 +152,14 @@ version="1.31"
 #
 
 # No point going any farther if we're not running correctly...
-if [ `whoami` != 'root' ]; then
+if [ `whoami` != 'root' -a "$1" != "--list" ]; then
   echo "virtualhost.sh requires super-user privileges to work."
   echo "Enter your password to continue..."
   sudo "$0" $* || exit 1
   exit 0
 fi
 
-if [ "$SUDO_USER" = "root" ]; then
+if [ "$SUDO_USER" = "root" -a "$1" != "--list" ]; then
   /bin/echo "You must start this under your regular user account (not root) using sudo."
   /bin/echo "Rerun using: sudo $0 $*"
   exit 1
