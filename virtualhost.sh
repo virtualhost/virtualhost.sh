@@ -155,7 +155,7 @@ version="1.31"
 if [ `whoami` != 'root' -a "$1" != "--list" ]; then
   echo "virtualhost.sh requires super-user privileges to work."
   echo "Enter your password to continue..."
-  sudo "$0" $* || exit 1
+  sudo -E "$0" $* || exit 1
   exit 0
 fi
 
@@ -170,7 +170,7 @@ fi
 # and you wish to set up a "live" virtualhost, you can change the following IP
 # address to the IP address of your machine.
 #
-IP_ADDRESS="127.0.0.1"
+: ${IP_ADDRESS:="127.0.0.1"}
 
 # By default, this script places files in /Users/[you]/Sites. If you would like
 # to change this, like to how Apple does things by default, uncomment the
@@ -180,12 +180,12 @@ IP_ADDRESS="127.0.0.1"
 
 # Configure the apache-related paths
 #
-APACHE_CONFIG="/private/etc/apache2"
-APACHECTL="/usr/sbin/apachectl"
+: ${APACHE_CONFIG:="/private/etc/apache2"}
+: ${APACHECTL:="/usr/sbin/apachectl"}
 
 # If you wish to change the default application that gets launched after the
 # virtual host is created, define it here:
-OPEN_COMMAND="/usr/bin/open"
+: ${OPEN_COMMAND:="/usr/bin/open"}
 
 # If you want to use a different browser than Safari, define it here:
 #BROWSER="Firefox"
@@ -207,11 +207,11 @@ OPEN_COMMAND="/usr/bin/open"
 # A feature to specify a custom log location within your site's document root
 # was requested, and so you will be prompted about this when you create a new
 # virtual host. If you do not want to be prompted, set the following to "no":
-PROMPT_FOR_LOGS="no"
+: ${PROMPT_FOR_LOGS:="no"}
 
 # If you do not want to be prompted, but you do always want to have the site-
 # specific logs folder, set PROMPT_FOR_LOGS="no" and enable this:
-ALWAYS_CREATE_LOGS="yes"
+: ${ALWAYS_CREATE_LOGS:="yes"}
 
 # By default, log files will be created in DOCUMENT_ROOT/logs. If you wish to
 # override this to a static location, you can do so here.
@@ -221,18 +221,18 @@ ALWAYS_CREATE_LOGS="yes"
 
 # If you have an atypical setup, and you don't need or want entries in your
 # /etc/hosts file, you can set the following option to "yes".
-SKIP_ETC_HOSTS="no"
+: ${SKIP_ETC_HOSTS:="no"}
 
 # If you are running this script on a platform other than Mac OS X, your home
 # partition is going to be different. If so, change it here.
-HOME_PARTITION="/Users"
+: ${HOME_PARTITION:="/Users"}
 
 # If your environment has a different default DocumentRoot, and you don't want
 # to be nagged about "fixing" your DocumentRoot, set this to "yes".
-SKIP_DOCUMENT_ROOT_CHECK="no"
+: ${SKIP_DOCUMENT_ROOT_CHECK:="no"}
 
 # If Apache works on a different port than the default 80, set it here
-APACHE_PORT="80"
+: ${APACHE_PORT:="80"}
 
 # Batch mode (all prompting will assume Yes). Any value will activate this. Can
 # be set here, in ~/.virtualhost.sh.conf, or on the command line, like:
@@ -246,11 +246,15 @@ APACHE_PORT="80"
 # We now will search your $DOC_ROOT_PREFIX for a matching subfolder using find.
 # By default, we will go two levels deep so that it doesn't take too long. If
 # you have a really complex structure, you may need to increase this.
-MAX_SEARCH_DEPTH=2
+: ${MAX_SEARCH_DEPTH:="2"}
 
 # Set to "yes" if you don't have a browser (headless) or don't want the site
 # to be launched in your browser after the virtualhost is set up.
 #SKIP_BROWSER="yes"
+
+# By default, we'll write out an index.html file in the DOCUMENT_ROOT if one
+# is not already present.
+: ${CREATE_INDEX:="yes"}
 
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
@@ -263,7 +267,7 @@ fi
 
 host_exists()
 {
-  if grep -q -e "^$IP_ADDRESS  $1$" /etc/hosts ; then
+  if grep -q -e "^$IP_ADDRESS  $VIRTUALHOST$" /etc/hosts ; then
     return 0
   else
     return 1
@@ -282,7 +286,7 @@ open_command()
 create_virtualhost()
 {
   if [ ! -z $WILDCARD_ZONE ]; then
-    SERVER_ALIAS="ServerAlias $1.$WILDCARD_ZONE"
+    SERVER_ALIAS="ServerAlias $VIRTUALHOST.$WILDCARD_ZONE"
   else
     SERVER_ALIAS="#ServerAlias your.alias.here"
   fi
@@ -295,8 +299,8 @@ create_virtualhost()
       # would love a pure shell way to do this, but sed makes it oh so hard
       LOG_FOLDER=`ruby -e "puts File.expand_path('$LOG_FOLDER'.gsub(/__DOCUMENT_ROOT__/, '$2'))"`
       log_folder_path=$LOG_FOLDER
-      access_log="${log_folder_path}/access_log-$1"
-      error_log="${log_folder_path}/error_log-$1"
+      access_log="${log_folder_path}/access_log-$VIRTUALHOST"
+      error_log="${log_folder_path}/error_log-$VIRTUALHOST"
     else
       log_folder_path=$FOLDER/logs
       access_log="${log_folder_path}/access_log"
@@ -309,11 +313,11 @@ create_virtualhost()
     touch $access_log $error_log
     chown $USER $access_log $error_log
   fi
-  cat << __EOF >$APACHE_CONFIG/virtualhosts/$1
+  cat << __EOF >$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
 # Created $date
 <VirtualHost *:$APACHE_PORT>
   DocumentRoot "$2"
-  ServerName $1
+  ServerName $VIRTUALHOST
   $SERVER_ALIAS
 
   ScriptAlias /cgi-bin "$2/cgi-bin"
@@ -713,7 +717,7 @@ if ! checkyesno ${SKIP_ETC_HOSTS}; then
 
     /bin/echo "Creating a virtualhost for $VIRTUALHOST..."
     /bin/echo -n "+ Adding $VIRTUALHOST to /etc/hosts... "
-    /bin/echo "$IP_ADDRESS  $1" >> /etc/hosts
+    /bin/echo "$IP_ADDRESS  $VIRTUALHOST" >> /etc/hosts
     /bin/echo "done"
   fi
 fi
@@ -749,7 +753,7 @@ else
   fi
 fi
 
-/bin/echo -n "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
+/bin/echo "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
 
 if [ -z "$BATCH_MODE" ]; then
   read resp
@@ -807,7 +811,7 @@ esac
 # Create the folder if we need to...
 if [ ! -d "${FOLDER}" ]; then
   /bin/echo -n "  + Creating folder ${FOLDER}... "
-  su $USER -c "mkdir -p $FOLDER"
+  su $USER -c "mkdir -p $FOLDER" || echo "  # Fatal: could not create ${FOLDER}"; exit 1
   /bin/echo "done"
 fi
 
@@ -847,9 +851,10 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Create a default index.html if there isn't already one there
 #
-if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
-
-  cat << __EOF >"${FOLDER}/index.html"
+if checkyesno ${CREATE_INDEX}; then
+  if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
+    /bin/echo -n "+ Creating 'index.html'... "
+    cat << __EOF >"${FOLDER}/index.html"
 <html>
 <head>
 <title>Welcome to $VIRTUALHOST</title>
@@ -904,8 +909,9 @@ if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
 </body>
 </html>
 __EOF
-  chown $USER "${FOLDER}/index.html"
-
+    /bin/echo "done"
+    chown $USER "${FOLDER}/index.html"
+  fi
 fi
 
 
