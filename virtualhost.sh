@@ -2,7 +2,7 @@
 #================================================================================
 # virtualhost.sh
 #
-# A fancy little script to setup a new virtualhost in Mac OS X.
+# A fancy little script to set up a new virtualhost in Mac OS X.
 #
 # If you want to delete a virtualhost that you've created, you need to:
 #
@@ -44,7 +44,7 @@
 #
 # WHAT'S NEW IN v1.25
 #
-# - Added --list option to list any virtualhosts that have been setup
+# - Added --list option to list any virtualhosts that have been set up
 #
 # WHAT'S NEW IN v1.24 (courtesy of http://github.com/aersoy)
 #
@@ -167,7 +167,7 @@ fi
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If you are using this script on a production machine with a static IP address,
-# and you wish to setup a "live" virtualhost, you can change the following IP
+# and you wish to set up a "live" virtualhost, you can change the following IP
 # address to the IP address of your machine.
 #
 IP_ADDRESS="127.0.0.1"
@@ -193,7 +193,7 @@ OPEN_COMMAND="/usr/bin/open"
 #BROWSER="Google Chrome"
 
 # If defined, a ServerAlias os $1.$WILDCARD_ZONE will be added to the virtual
-# host file. This is useful if you, for example, have setup a wildcard domain
+# host file. This is useful if you, for example, have set up a wildcard domain
 # either on your own DNS server or using a server like dyndns.org. For example,
 # if my local IP of 10.0.42.42 is static (which can still be achieved using a
 # well-configured DHCP server or an Apple Airport Extreme 802.11n base station)
@@ -249,7 +249,7 @@ APACHE_PORT="80"
 MAX_SEARCH_DEPTH=2
 
 # Set to "yes" if you don't have a browser (headless) or don't want the site
-# to be launched in your browser after the virtualhost is setup.
+# to be launched in your browser after the virtualhost is set up.
 #SKIP_BROWSER="yes"
 
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
@@ -487,7 +487,7 @@ else
         echo "http://${server_name}/ -> ${doc_root}"
       done
     else
-      echo "No virtualhosts have been setup yet."
+      echo "No virtualhosts have been set up yet."
     fi
 
     exit
@@ -868,7 +868,7 @@ if [ ! -e "${FOLDER}/index.html" -a ! -e "${FOLDER}/index.php" ]; then
  </div>
 
  <div align="left">
-  <p>If you are reading this in your web browser, then the only logical conclusion is that the <b><a href="http://$VIRTUALHOST:$APACHE_PORT/">http://$VIRTUALHOST:$APACHE_PORT/</a></b> virtualhost was setup correctly. :)</p>
+  <p>If you are reading this in your web browser, then the only logical conclusion is that the <b><a href="http://$VIRTUALHOST:$APACHE_PORT/">http://$VIRTUALHOST:$APACHE_PORT/</a></b> virtualhost was set up correctly. :)</p>
 
   <p>You can find the configuration file for this virtual host in:<br>
   <table class="indent" border="0" cellspacing="3">
@@ -936,7 +936,7 @@ $APACHECTL graceful 1>/dev/null 2>/dev/null
 
 cat << __EOF
 
-http://$VIRTUALHOST:$APACHE_PORT/ is setup and ready for use.
+http://$VIRTUALHOST:$APACHE_PORT/ is set up and ready for use.
 
 __EOF
 
