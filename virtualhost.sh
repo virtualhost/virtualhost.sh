@@ -376,7 +376,7 @@ version_check()
       /bin/echo "done"
       if [ -z $BATCH_MODE ]; then
         /bin/echo "A newer version ($current_version) of virtualhost.sh is available."
-        /bin/echo -n "Do you want to get it now? [Y/n] "
+        /bin/echo -n "Do you want to get it now? [y/N] "
         read resp
       else
         /bin/echo "A newer version ($current_version) of virtualhost.sh is available."
@@ -386,8 +386,36 @@ version_check()
 
       case $resp in
       y*|Y*)
-        open_command "https://github.com/pgib/virtualhost.sh"
-        exit
+        UPDATE_URL="https://raw.github.com/pgib/virtualhost.sh/$current_version/virtualhost.sh"
+        TMP_UPDATE_FILE=$(mktemp /tmp/virtualhost.sh.update.XXXXXX)
+
+        OS=$(uname -s)
+        if [ $OS = "Darwin" -o $OS = "FreeBSD" ]; then
+          # Mac OS X or FreeBSD
+          OCTAL_MODE=$(stat -f '%p' $0)
+        elif [ $OS = "Linux" ]; then
+          # Linux
+          OCTAL_MODE=$(stat -c '%a' $0)
+        else
+          /bin/echo "Unsupported OS - Auto-update cannot continue."
+          /bin/echo "Please visit https://github.com/pgib/virtualhost.sh to get the latest and greatest."
+          return
+        fi
+
+        if [[ ! -w $0 ]]; then
+          /bin/echo "You don't have permission to write on file $0."
+          /bin/echo "Run as ROOT!"
+          exit 1
+        fi
+
+        curl --silent --output $TMP_UPDATE_FILE $UPDATE_URL
+
+        chmod $OCTAL_MODE $TMP_UPDATE_FILE
+
+        mv -f $TMP_UPDATE_FILE $0
+
+        exec $0 $*
+        exit 0
       ;;
 
       *)
@@ -417,7 +445,8 @@ if [ ! -d $APACHE_CONFIG ]; then
 fi
 
 if [ -z $SKIP_VERSION_CHECK ]; then
-  version_check
+  # Hack: Pass the paramenters to re-exec the script after update the version
+  version_check $*
 fi
 
 # catch Ctrl-C
