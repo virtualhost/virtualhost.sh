@@ -313,6 +313,30 @@ create_virtualhost()
     touch $access_log $error_log
     chown $USER $access_log $error_log
   fi
+
+  # The <Directory> directive is different for Apache 2.4+.
+  # Reference: http://httpd.apache.org/docs/2.4/upgrading.html
+  if (( $APACHE_MAJOR_VERSION >= 2 )) && (( $APACHE_MINOR_VERSION >= 4 )); then
+    DIRECTORY=$(cat << __EOT
+<Directory "$2">
+    Options All
+    AllowOverride All
+    Require all granted
+  </Directory>
+__EOT
+    )
+  else
+    DIRECTORY=$(cat << __EOT
+<Directory "$2">
+    Options All
+    AllowOverride All
+    Order allow,deny
+    Allow from all
+  </Directory>
+__EOT
+    )
+  fi
+
   cat << __EOF >$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
 # Created $date
 <VirtualHost *:$APACHE_PORT>
@@ -322,12 +346,7 @@ create_virtualhost()
 
   ScriptAlias /cgi-bin "$2/cgi-bin"
 
-  <Directory "$2">
-    Options All
-    AllowOverride All
-    Order allow,deny
-    Allow from all
-  </Directory>
+  $DIRECTORY
 
   ${log}CustomLog "${access_log}" combined
   ${log}ErrorLog "${error_log}"
@@ -405,8 +424,17 @@ version_check()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# Make sure this is an Apache 2.x / Leopard machine
-if [ ! -d $APACHE_CONFIG ]; then
+# Get the Apache version number to check compatibility.
+APACHE_VERSION=$(${APACHECTL} -v | perl -ne 'print $1 if /Apache\/([0-9.]+)/')
+
+# Extract the major, minor, and patch numbers from the Apache version for
+# easier version comparisons.
+IFS='.'
+read APACHE_MAJOR_VERSION APACHE_MINOR_VERSION APACHE_PATCH_VERSION <<< "$APACHE_VERSION"
+unset IFS
+
+# Check for Apache 2.x.
+if (( $APACHE_MAJOR_VERSION < 2 )); then
   /bin/echo "Could not find ${APACHE_CONFIG}"
   /bin/echo "Sorry, this version of virtualhost.sh only works with Leopard. You can download an older version which works with previous versions of Mac OS X here:"
   /bin/echo
