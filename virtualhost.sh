@@ -815,7 +815,7 @@ fi
 # Create the folder if we need to...
 if [ ! -d "${FOLDER}" ]; then
   /bin/echo -n "  + Creating folder ${FOLDER}... "
-  su $USER -c "mkdir -p $FOLDER" || echo "  # Fatal: could not create ${FOLDER}"; exit 1
+  su $USER -c "mkdir -p $FOLDER"
   /bin/echo "done"
 fi
 
