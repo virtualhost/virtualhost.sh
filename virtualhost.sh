@@ -325,8 +325,7 @@ create_virtualhost()
   <Directory "$2">
     Options All
     AllowOverride All
-    Order allow,deny
-    Allow from all
+    Require all granted
   </Directory>
 
   ${log}CustomLog "${access_log}" combined
@@ -495,6 +494,16 @@ else
     fi
 
     exit
+
+  # RENAME VIRTUALHOST
+  elif [ "$1" = "--rename" ]; then
+    if [ -z $2 -a -z $3 ]; then
+      usage
+    else
+      OLD_VIRTUALHOST=$2
+      VIRTUALHOST=$3
+      RENAME=0
+    fi
   else
     VIRTUALHOST=`echo $1|sed -e 's/\///g'`
     FOLDER=`echo $2 | sed -e 's/\/*$//'`
@@ -505,6 +514,12 @@ fi
 if ! /bin/echo $VIRTUALHOST | grep -q -E '^[A-Za-z0-9]+[A-Za-z0-9.-]+$' ; then
   /bin/echo "Sorry, '$VIRTUALHOST' is not a valid host name to use. It must start with a letter or number."
   exit 1
+else
+  # Remove slash(es) in the virtualhost name
+  if /bin/echo $VIRTUALHOST | grep -q '/' ; then
+    /bin/echo "'$VIRTUALHOST' contains slash(es). It will be cleaned."
+    VIRTUALHOST=${VIRTUALHOST//[\/]/}
+  fi
 fi
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -592,6 +607,87 @@ if [ ! -z $DELETE ]; then
     /bin/echo "done"
   else
     /bin/echo "- Virtualhost $VIRTUALHOST does not currently exist. Aborting..."
+    exit 1
+  fi
+
+  exit
+fi
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Rename the virtualhost if that's the requested action
+#
+if [ ! -z $RENAME ]; then
+  /bin/echo -n "Rename virtualhost '$OLD_VIRTUALHOST' to '$VIRTUALHOST' ... Continue? [Y/n]: "
+
+  if [ -z "$BATCH_MODE" ]; then
+    read continue
+  else
+    continue="Y"
+    /bin/echo $continue
+  fi
+
+  case $continue in
+  n*|N*) exit
+  esac
+
+  # /etc/hosts
+  if ! checkyesno ${SKIP_ETC_HOSTS}; then
+    /bin/echo -n "+ Renaming $OLD_VIRTUALHOST to $VIRTUALHOST from /etc/hosts... "
+
+    cat /etc/hosts | grep -v $OLD_VIRTUALHOST > /tmp/hosts.tmp
+    /bin/echo "$IP_ADDRESS  $VIRTUALHOST" >> /tmp/hosts.tmp
+
+    if [ -s /tmp/hosts.tmp ]; then
+      mv /tmp/hosts.tmp /etc/hosts
+    fi
+
+    /bin/echo "done"
+  fi
+
+  # If virtualhost file exists
+  if [ -e $APACHE_CONFIG/virtualhosts/$OLD_VIRTUALHOST ]; then
+    OLD_VIRTUALHOST_FILE=$APACHE_CONFIG/virtualhosts/$OLD_VIRTUALHOST
+    NEW_VIRTUALHOST_FILE=$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
+    DOCUMENT_ROOT=`grep ServerName $APACHE_CONFIG/virtualhosts/$OLD_VIRTUALHOST | awk '{print $2}' | tr -d '"'`
+
+    # Update log files ?
+
+    # Update ServerName in virtualhost file
+    /bin/echo -n "+ Create new virtualhost... "
+
+    if [ $DOCUMENT_ROOT -a $OLD_VIRTUALHOST_FILE ]; then
+      sed "s/ServerName $OLD_VIRTUALHOST/ServerName $VIRTUALHOST/g" "$OLD_VIRTUALHOST_FILE" > "$NEW_VIRTUALHOST_FILE"
+      # Rename virtualhost file
+      if [ -s $NEW_VIRTUALHOST_FILE ]; then
+        /bin/echo "done"
+        /bin/echo -n "- Delete old virtualhost... "
+        if rm -rf "${OLD_VIRTUALHOST_FILE}" ; then
+          /bin/echo "done"
+
+          /bin/echo -n "+ Restarting Apache... "
+          $APACHECTL graceful 1>/dev/null 2>/dev/null
+          /bin/echo "done"
+
+          /bin/echo "http://$VIRTUALHOST:$APACHE_PORT/ is setup and ready for use."
+
+          if [ -z $SKIP_BROWSER ]; then
+            /bin/echo -n "Launching virtualhost... "
+            sleep 1
+            curl --silent http://$VIRTUALHOST:$APACHE_PORT/ 2>&1 >/dev/null
+            open_command "http://$VIRTUALHOST:$APACHE_PORT/"
+            /bin/echo "done"
+          fi
+        fi
+      else
+        /bin/echo "could not update virtualhost $OLD_VIRTUALHOST_FILE. Aborting..."
+      fi
+    else
+      /bin/echo "could not find $OLD_VIRTUALHOST. Aborting..."
+      exit 1
+    fi
+  else
+    /bin/echo "- Virtualhost $OLD_VIRTUALHOST does not currently exist. Aborting..."
     exit 1
   fi
 
