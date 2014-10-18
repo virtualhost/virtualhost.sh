@@ -399,18 +399,18 @@ version_check()
         read resp
       else
         /bin/echo "A newer version ($current_version) of virtualhost.sh is available."
-        /bin/echo "Visit https://github.com/pgib/virtualhost.sh to go get it."
+        /bin/echo "Visit https://github.com/virtualhost/virtualhost.sh to go get it."
         resp="n"
       fi
 
       case $resp in
       y*|Y*)
-        open_command "https://github.com/pgib/virtualhost.sh"
+        open_command "https://github.com/virtualhost/virtualhost.sh"
         exit
       ;;
 
       *)
-        /bin/echo "Okay. At your convenience, visit: https://github.com/pgib/virtualhost.sh"
+        /bin/echo "Okay. At your convenience, visit: https://github.com/virtualhost/virtualhost.sh"
         /bin/echo
       ;;
       esac
