@@ -405,8 +405,23 @@ checkyesno()
 
 version_check()
 {
+  # Only check for a new version once every 60 minutes.
+  current_time=`date +%s`
+  last_update_check_file="${HOME_PARTITION}/$USER/.virtualhost.sh/last_update_check"
+  if [ -e "$last_update_check_file" ]; then
+    last_checked=`cat "$last_update_check_file"`
+    due_for_a_check=`/bin/echo "$last_checked < ($current_time - 3600)" | /usr/bin/bc`
+    if [ $due_for_a_check -eq 0 ]; then
+      return 0
+    fi
+  elif [ ! -d "${HOME_PARTITION}/$USER/.virtualhost.sh" ]; then
+    # Set up the last update check directory if it's not there yet.
+    mkdir "${HOME_PARTITION}/$USER/.virtualhost.sh"
+  fi
+
   /bin/echo -n "Checking for updates... "
   current_version=`curl --silent https://api.github.com/repos/virtualhost/virtualhost.sh/releases | grep tag_name | awk '{print $2}' | sed -e 's/[^0-9.]//g'`
+  /bin/echo $current_time > "$last_update_check_file"
 
   # See if we have the latest version
   if [ -n "$current_version" ]; then
@@ -465,10 +480,6 @@ if (( $APACHE_MAJOR_VERSION < 2 )); then
   exit 1
 fi
 
-if [ -z $SKIP_VERSION_CHECK ]; then
-  version_check
-fi
-
 # catch Ctrl-C
 #trap 'cleanup' 2
 
@@ -503,6 +514,10 @@ fi
 
 if [ -z $DOC_ROOT_PREFIX ]; then
   DOC_ROOT_PREFIX="${HOME_PARTITION}/$USER/Sites"
+fi
+
+if [ -z $SKIP_VERSION_CHECK ]; then
+  version_check
 fi
 
 usage()
