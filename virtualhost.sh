@@ -459,7 +459,7 @@ fi
 usage()
 {
   cat << __EOT
-Usage: sudo virtualhost.sh <name> [<optional path>]
+Usage: sudo virtualhost.sh <name> [<optional path>] [<optional log-path>]
        sudo virtualhost.sh --list
        sudo virtualhost.sh --delete <name>
    where <name> is the one-word name you'd like to use. (e.g. mysite)
@@ -498,6 +498,7 @@ else
   else
     VIRTUALHOST=`echo $1|sed -e 's/\///g'`
     FOLDER=`echo $2 | sed -e 's/\/*$//'`
+    LOG_FOLDER=`echo $3 | sed -e 's/\/*$//'`
   fi
 fi
 
@@ -836,8 +837,10 @@ if checkyesno ${PROMPT_FOR_LOGS}; then
   case $resp in
 
     y*|Y*)
-      log="1"
-      LOG_FOLDER="$FOLDER/logs"
+      log="1"      
+      if [ -z "$LOG_FOLDER" ]; then
+        LOG_FOLDER="$FOLDER/logs"
+      fi
     ;;
 
     *)
@@ -848,7 +851,9 @@ if checkyesno ${PROMPT_FOR_LOGS}; then
 elif checkyesno ${ALWAYS_CREATE_LOGS}; then
 
   log="1"
-
+  if [ -z "$LOG_FOLDER" ]; then
+    LOG_FOLDER="$FOLDER/logs"
+  fi
 fi
 
 
@@ -894,6 +899,19 @@ if checkyesno ${CREATE_INDEX}; then
     <td><img src="/icons/dir.gif" width="20" height="22" border="0"></td>
     <td><b><a href="file://$FOLDER">$FOLDER</b></a></td>
    </tr>
+  </table>
+  </p>
+
+  <p>You will find yout logs in:<br>
+  <table class="indent" border="0" cellspacing="3">
+   <tr>
+    <td><img src="/icons/script.gif" width="20" height="22" border="0"></td>
+    <td><b><a href="file://$LOG_FOLDER/access_log-$VIRTUALHOST">$LOG_FOLDER/access_log-$VIRTUALHOST</b></a></td>
+   </tr>
+   <tr>
+    <td><img src="/icons/script.gif" width="20" height="22" border="0"></td>
+    <td><b><a href="file://$LOG_FOLDER/error_log-$VIRTUALHOST">$LOG_FOLDER/error_log-$VIRTUALHOST</b></a></td>
+   </tr>   
   </table>
   </p>
 
