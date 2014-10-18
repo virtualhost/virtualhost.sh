@@ -406,7 +406,7 @@ checkyesno()
 version_check()
 {
   /bin/echo -n "Checking for updates... "
-  current_version=`dig +tries=1 +time=1 +retry=0 txt virtualhost.patrickgibson.com | grep -e '^virtualhost' | awk '{print $5}' | sed -e 's/"//g'`
+  current_version=`curl --silent https://api.github.com/repos/virtualhost/virtualhost.sh/releases | grep tag_name | awk '{print $2}' | sed -e 's/[^0-9.]//g'`
 
   # See if we have the latest version
   if [ -n "$current_version" ]; then
