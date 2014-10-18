@@ -10,6 +10,27 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# WHAT'S NEW IN v1.32
+#
+# - Moved the project to a GitHub organization:
+#   https://github.com/virtualhost/virtualhost.sh
+# - OS X Yosemite (Apache 2.4.x) compatibility, thanks @rubenvarela
+#   @Nainterceptor! Your existing VirtualHosts need to be updated, see
+#   http://httpd.apache.org/docs/2.4/upgrading.html#access. An automated
+#   upgrade process is planned, see
+#   https://github.com/virtualhost/virtualhost.sh/issues/63.
+# - An optional second argument has been added to specify the DocumentRoot for
+#   cases where folder matching is not appropriate:
+#   `sudo virtualhost.sh example.dev ~/Sites/my-example.dev`
+# - sudo is no longer required when running `virtualhost.sh --list`.
+# - New CREATE_INDEX option to suppress writing the default index.html if an
+#   index is not already present.
+# - The script no longer overrides variables that are already set in the
+#   environment, so anything you would normally set in ~/.virtualhost.sh.conf
+#   can be set inline as well:
+#   `SKIP_BROWSER="yes" virtualhost.sh foobar.dev`
+# - The script now exits early when the DocumentRoot folder can't be created.
+#
 # WHAT'S NEW IN v1.31
 #
 # - Fix some issues with BATCH_MODE (eg. Rails/Symphony detection)
