@@ -169,7 +169,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.31"
+version="1.32"
 #
 
 # No point going any farther if we're not running correctly...
