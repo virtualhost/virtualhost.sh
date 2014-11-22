@@ -4,7 +4,7 @@ You can grab the [script here](https://github.com/virtualhost/virtualhost.sh/raw
 
 You'll need to `chmod a+x virtualhost.sh` in order to run it after downloading.
 
-## Alternate Installation with [Homebrew](http://mxcl.github.com/homebrew/)
+## Alternate Installation with [Homebrew](http://brew.sh)
 
     brew install virtualhost.sh
 
