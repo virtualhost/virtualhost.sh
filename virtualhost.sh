@@ -376,6 +376,15 @@ __EOT
 __EOF
 }
 
+edit_virtualhost()
+{
+  if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
+    $EDITOR $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
+  else
+    /bin/echo "VirtualHost $VIRTUALHOST not found."
+  fi
+}
+
 cleanup()
 {
   /bin/echo
@@ -525,6 +534,7 @@ usage()
   cat << __EOT
 Usage: sudo virtualhost.sh <name> [<optional path>]
        sudo virtualhost.sh --list
+       sudo virtualhost.sh --edit <name>
        sudo virtualhost.sh --delete <name>
    where <name> is the one-word name you'd like to use. (e.g. mysite)
 
@@ -559,6 +569,15 @@ else
     fi
 
     exit
+  elif [ "$1" = "--edit" ]; then
+    if [ -z $2 ]; then
+      usage
+    else
+      VIRTUALHOST=`echo $2|sed -e 's/\///g'`
+      edit_virtualhost
+
+      exit
+    fi
   else
     VIRTUALHOST=`echo $1|sed -e 's/\///g'`
     FOLDER=`echo $2 | sed -e 's/\/*$//'`
