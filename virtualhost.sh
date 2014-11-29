@@ -436,7 +436,7 @@ version_check()
   fi
 
   /bin/echo -n "Checking for updates... "
-  current_version=`curl --silent https://api.github.com/repos/virtualhost/virtualhost.sh/releases | grep tag_name | awk '{print $2}' | sed -e 's/[^0-9.]//g'`
+  current_version=`curl --silent https://api.github.com/repos/virtualhost/virtualhost.sh/releases | grep tag_name -m 1 | awk '{print $2}' | sed -e 's/[^0-9.]//g'`
   /bin/echo $current_time > "$last_update_check_file"
 
   # See if we have the latest version
