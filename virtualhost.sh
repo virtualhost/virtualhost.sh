@@ -10,6 +10,13 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# WHAT'S NEW IN v1.33
+#
+# - Edit functionality added, `sudo virtualhost.sh --edit example.dev` opens
+#   the example.dev VirtualHost in your $EDITOR.
+# - Now uses the GitHub API to check for new releases.
+# - Checking for new releases is only done once per hour.
+#
 # WHAT'S NEW IN v1.32
 #
 # - Moved the project to a GitHub organization:
@@ -169,7 +176,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.32"
+version="1.33"
 #
 
 # No point going any farther if we're not running correctly...
