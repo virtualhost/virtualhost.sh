@@ -10,6 +10,10 @@
 #
 # where <site> is the site name you used when you first created the host.
 #
+# WHAT'S NEW IN v1.34
+#
+# - Fix for using the GitHub API to check for new releases.
+#
 # WHAT'S NEW IN v1.33
 #
 # - Edit functionality added, `sudo virtualhost.sh --edit example.dev` opens
@@ -176,7 +180,7 @@
 # by Patrick Gibson <patrick@patrickg.com>
 #================================================================================
 # Don't change this!
-version="1.33"
+version="1.34"
 #
 
 # No point going any farther if we're not running correctly...
