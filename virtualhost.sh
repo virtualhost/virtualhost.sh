@@ -773,6 +773,7 @@ if [ -d /etc/httpd/virtualhosts ]; then
         if ! host_exists $host ; then
           /bin/echo "$IP_ADDRESS  $host" >> /etc/hosts
           /bin/echo "$IPV6_ADDRESS  $host" >> /etc/hosts
+          /bin/echo "" >> /etc/hosts
         fi
       fi
       docroot=`grep DocumentRoot /etc/httpd/virtualhosts/$host | awk '{print $2}'`
@@ -816,6 +817,7 @@ if ! checkyesno ${SKIP_ETC_HOSTS}; then
     /bin/echo -n "+ Adding $VIRTUALHOST to /etc/hosts... "
     /bin/echo "$IP_ADDRESS  $VIRTUALHOST" >> /etc/hosts
     /bin/echo "$IPV6_ADDRESS  $VIRTUALHOST" >> /etc/hosts
+    /bin/echo "" >> /etc/hosts
     /bin/echo "done"
   fi
 fi
