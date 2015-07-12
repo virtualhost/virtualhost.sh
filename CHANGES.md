@@ -2,7 +2,7 @@
 
 - Added support for IPv6 default local address ::1, thanks [@davereid](https://github.com/davereid).
 - Fix when specifying document root interactively, thanks [@chrisantonellis](https://github.com/chrisantonellis).
-- VirtualHosts are now cross-compatible between Apache 2.2.x and 2.4+.
+- VirtualHosts are now cross-compatible between Apache 2.2.x and 2.4+, rather than detecting the version and generating different directives.
 - When using `--edit` Apache is restarted after returning from your editor.
 - Suppress password message when running `virtualhost.sh` without prefixing sudo while within the sudo timeout/grace period.
 - Fix checking for updates while running `virtualhost.sh --list` without sudo (the last update check directory and file are now owned by $USER). Note that update checking needs to run once *with* sudo to fix the permissions.
