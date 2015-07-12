@@ -404,6 +404,13 @@ cleanup()
   exit
 }
 
+restart_apache()
+{
+  /bin/echo -n "+ Restarting Apache... "
+  $APACHECTL graceful 1>/dev/null 2>/dev/null
+  /bin/echo "done"
+}
+
 # Based on FreeBSD's /etc/rc.subr
 checkyesno()
 {
@@ -682,9 +689,7 @@ if [ ! -z $DELETE ]; then
     rm $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
     /bin/echo "done"
 
-    /bin/echo -n "+ Restarting Apache... "
-    $APACHECTL graceful 1>/dev/null 2>/dev/null
-    /bin/echo "done"
+    restart_apache
   else
     /bin/echo "- Virtualhost $VIRTUALHOST does not currently exist. Aborting..."
     exit 1
@@ -1046,9 +1051,7 @@ if [ -x /usr/bin/dscacheutil ]; then
   sleep 1
 fi
 
-/bin/echo -n "+ Restarting Apache... "
-$APACHECTL graceful 1>/dev/null 2>/dev/null
-/bin/echo "done"
+restart_apache
 
 cat << __EOF
 
