@@ -258,21 +258,23 @@ version_check()
 {
   # Only check for a new version once every day.
   current_time=`date +%s`
-  last_update_check_file="${HOME_PARTITION}/$USER/.virtualhost.sh/last_update_check"
+  last_update_check_directory="${HOME_PARTITION}/$USER/.virtualhost.sh"
+  last_update_check_file="${last_update_check_directory}/last_update_check"
   if [ -e "$last_update_check_file" ]; then
     last_checked=`cat "$last_update_check_file"`
     due_for_a_check=`/bin/echo "$last_checked < ($current_time - 86400)" | /usr/bin/bc`
     if [ $due_for_a_check -eq 0 ]; then
       return 0
     fi
-  elif [ ! -d "${HOME_PARTITION}/$USER/.virtualhost.sh" ]; then
+  elif [ ! -d "$last_update_check_directory" ]; then
     # Set up the last update check directory if it's not there yet.
-    mkdir "${HOME_PARTITION}/$USER/.virtualhost.sh"
+    mkdir "$last_update_check_directory"
   fi
 
   /bin/echo -n "Checking for updates... "
   current_version=`curl --silent https://api.github.com/repos/virtualhost/virtualhost.sh/releases | grep tag_name -m 1 | awk '{print $2}' | sed -e 's/[^0-9.]//g'`
   /bin/echo $current_time > "$last_update_check_file"
+  chown $USER "$last_update_check_directory" "$last_update_check_file"
 
   # See if we have the latest version
   if [ -n "$current_version" ]; then
