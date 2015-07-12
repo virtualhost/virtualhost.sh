@@ -1,3 +1,10 @@
+### 1.35
+
+- Added support for IPv6 default local address ::1, thanks [@davereid](https://github.com/davereid).
+- Fix when specifying document root interactively, thanks [@chrisantonellis](https://github.com/chrisantonellis).
+- When using `--edit` Apache is restarted after returning from your editor.
+- Checking for new releases is only done once per day.
+
 ### 1.34
 
 - Fix for using the GitHub API to check for new releases.
