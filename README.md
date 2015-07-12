@@ -12,3 +12,11 @@ You'll need to `chmod a+x virtualhost.sh` in order to run it after downloading.
 
 See the [wiki](https://github.com/virtualhost/virtualhost.sh/wiki/_pages)
 
+## Maintainers
+
+* [Scott Reeves (Cottser)](https://github.com/Cottser)
+* [Patrick Gibson (pgib)](https://github.com/pgib)
+
+If you're interested in helping maintain virtualhost.sh, please create some focused pull requests and/or help out in the issues. Once you have a track record you can create an issue to request maintainership.
+
+Original author: [Patrick Gibson (pgib)](https://github.com/pgib).
