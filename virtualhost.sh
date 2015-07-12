@@ -400,8 +400,8 @@ else
       echo "Listing virtualhosts found in $APACHE_CONFIG/virtualhosts"
       echo
       for i in $APACHE_CONFIG/virtualhosts/*; do
-        server_name=`grep ServerName $i | awk '{print $2}'`
-        doc_root=`grep DocumentRoot $i | awk '{print $2}' | sed -e 's/"//g'`
+        server_name=`grep -m1 "^\s*ServerName" $i | awk '{print $2}'`
+        doc_root=`grep -m1 "^\s*DocumentRoot" $i | awk '{print $2}' | sed -e 's/"//g'`
         echo "http://${server_name}/ -> ${doc_root}"
       done
     else
