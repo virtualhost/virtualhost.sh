@@ -4,6 +4,7 @@
 - Fix when specifying document root interactively, thanks [@chrisantonellis](https://github.com/chrisantonellis).
 - VirtualHosts are now cross-compatible between Apache 2.2.x and 2.4+.
 - When using `--edit` Apache is restarted after returning from your editor.
+- Suppress password message when running `virtualhost.sh` without prefixing sudo while within the sudo timeout/grace period.
 - Fix checking for updates while running `virtualhost.sh --list` without sudo (the last update check directory and file are now owned by $USER). Note that update checking needs to run once *with* sudo to fix the permissions.
 - Checking for new releases is only done once per day.
 

@@ -12,9 +12,13 @@ version="1.35"
 
 # No point going any farther if we're not running correctly...
 if [ `whoami` != 'root' -a "$1" != "--list" ]; then
-  echo "virtualhost.sh requires super-user privileges to work."
-  echo "Enter your password to continue..."
-  sudo -E "$0" $* || exit 1
+  read -d '' prompt <<- EOT
+virtualhost.sh requires super-user privileges to work.
+Enter your password to continue...
+Password:
+EOT
+
+  sudo -E -p "$prompt" "$0" $* || exit 1
   exit 0
 fi
 
