@@ -665,9 +665,9 @@ if [ -z "$FOLDER" ]; then
       DOC_ROOT_FOLDER_MATCH="$DOC_ROOT_PREFIX/$VIRTUALHOST"
     else
       if [ $MAX_SEARCH_DEPTH -eq 0 ]; then
-        /bin/echo -n " searching with no a maximum depth. This could take a really long time..."
+        /bin/echo "  searching with no maximum depth. This could take a really long time..."
       else
-        /bin/echo -n " searching to a maximum directory depth of $MAX_SEARCH_DEPTH. This could take some time..."
+        /bin/echo "  searching to a maximum directory depth of $MAX_SEARCH_DEPTH. This could take some time..."
       fi
       nested_match=`find $DOC_ROOT_PREFIX -maxdepth $MAX_SEARCH_DEPTH -type d -name $VIRTUALHOST 2>/dev/null`
 
@@ -681,7 +681,7 @@ if [ -z "$FOLDER" ]; then
     fi
   fi
 
-/bin/echo "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
+/bin/echo -n "  - Use $DOC_ROOT_FOLDER_MATCH as the virtualhost folder? [Y/n] "
 
   if [ -z "$BATCH_MODE" ]; then
     read resp
