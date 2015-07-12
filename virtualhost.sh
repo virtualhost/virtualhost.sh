@@ -392,6 +392,7 @@ edit_virtualhost()
 {
   if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
     $EDITOR $APACHE_CONFIG/virtualhosts/$VIRTUALHOST
+    restart_apache
   else
     /bin/echo "VirtualHost $VIRTUALHOST not found."
   fi
