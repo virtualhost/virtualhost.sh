@@ -7,6 +7,7 @@
 - Suppress password message when running `virtualhost.sh` without prefixing sudo while within the sudo timeout/grace period.
 - Fix checking for updates while running `virtualhost.sh --list` without sudo (the last update check directory and file are now owned by $USER). Note that update checking needs to run once *with* sudo to fix the permissions.
 - Checking for new releases is only done once per day.
+- Running `virtualhost.sh` by itself no longer requires sudo.
 
 ### 1.34
 

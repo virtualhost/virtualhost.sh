@@ -11,7 +11,7 @@ version="1.35"
 #
 
 # No point going any farther if we're not running correctly...
-if [ `whoami` != 'root' -a "$1" != "--list" ]; then
+if [ `whoami` != 'root' -a "$1" -a "$1" != "--list" ]; then
   read -d '' prompt <<- EOT
 virtualhost.sh requires super-user privileges to work.
 Enter your password to continue...
@@ -22,7 +22,7 @@ EOT
   exit 0
 fi
 
-if [ "$SUDO_USER" = "root" -a "$1" != "--list" ]; then
+if [ "$SUDO_USER" = "root" -a "$1" -a "$1" != "--list" ]; then
   /bin/echo "You must start this under your regular user account (not root) using sudo."
   /bin/echo "Rerun using: sudo $0 $*"
   exit 1
