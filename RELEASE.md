@@ -5,6 +5,7 @@ This information is only relevant to [virtualhost.sh maintainers](https://github
 In all the examples below 1.32 is used as an example only, change it to the version you are releasing.
 
 1. Increase the version number in virtualhost.sh (the `version` variable).
+1. Change the version number in the virtualhost.sh header.
 1. Add to the changelog in virtualhost.sh.
 1. (optional) Tag the new release manually with `git tag 1.32` and push the tag with `git push --tags`
 1. [Make a new release on GitHub](https://github.com/virtualhost/virtualhost.sh/releases/new) and add the changelog notes there.
