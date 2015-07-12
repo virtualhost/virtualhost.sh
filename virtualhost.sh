@@ -4,7 +4,7 @@
 #
 # A fancy little script to manage virtualhosts on Mac OS X.
 #
-# For usage help and available commands run `sudo virtualhost.sh`.
+# For usage help and available commands run `virtualhost.sh`.
 #================================================================================
 # Don't change this!
 version="1.35"
