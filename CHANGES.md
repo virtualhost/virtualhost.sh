@@ -20,8 +20,8 @@
 
 - Moved the project to a GitHub organization:
  https://github.com/virtualhost/virtualhost.sh
-- OS X Yosemite (Apache 2.4.x) compatibility, thanks @rubenvarela
- @Nainterceptor! Your existing VirtualHosts need to be updated, see
+- OS X Yosemite (Apache 2.4.x) compatibility, thanks [@rubenvarela](https://github.com/rubenvarela)
+ [@Nainterceptor](https://github.com/Nainterceptor)! Your existing VirtualHosts need to be updated, see
  http://httpd.apache.org/docs/2.4/upgrading.html#access. An automated
  upgrade process is planned, see
  https://github.com/virtualhost/virtualhost.sh/issues/63.
@@ -40,8 +40,8 @@
 ### 1.31
 
 - Fix some issues with BATCH_MODE (eg. Rails/Symphony detection)
-- LOG_FOLDER can have a __DOCUMENT_ROOT__ placeholder for site-specific
- locations. eg. LOG_FOLDER="__DOCUMENT_ROOT__/../logs"
+- LOG_FOLDER can have a `__DOCUMENT_ROOT__` placeholder for site-specific
+ locations. eg. `LOG_FOLDER="__DOCUMENT_ROOT__/../logs`
 - Strip out a trailing slash in the virtual host that can show up when
  tab-completion is used in the shell.
 
