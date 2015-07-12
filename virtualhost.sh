@@ -426,12 +426,12 @@ checkyesno()
 
 version_check()
 {
-  # Only check for a new version once every 60 minutes.
+  # Only check for a new version once every day.
   current_time=`date +%s`
   last_update_check_file="${HOME_PARTITION}/$USER/.virtualhost.sh/last_update_check"
   if [ -e "$last_update_check_file" ]; then
     last_checked=`cat "$last_update_check_file"`
-    due_for_a_check=`/bin/echo "$last_checked < ($current_time - 3600)" | /usr/bin/bc`
+    due_for_a_check=`/bin/echo "$last_checked < ($current_time - 86400)" | /usr/bin/bc`
     if [ $due_for_a_check -eq 0 ]; then
       return 0
     fi
