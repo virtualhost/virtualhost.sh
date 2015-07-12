@@ -2,6 +2,7 @@
 
 - Added support for IPv6 default local address ::1, thanks [@davereid](https://github.com/davereid).
 - Fix when specifying document root interactively, thanks [@chrisantonellis](https://github.com/chrisantonellis).
+- VirtualHosts are now cross-compatible between Apache 2.2.x and 2.4+.
 - When using `--edit` Apache is restarted after returning from your editor.
 - Checking for new releases is only done once per day.
 

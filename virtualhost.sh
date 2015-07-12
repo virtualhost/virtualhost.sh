@@ -176,26 +176,21 @@ create_virtualhost()
 
   # The <Directory> directive is different for Apache 2.4+.
   # Reference: http://httpd.apache.org/docs/2.4/upgrading.html
-  if (( $APACHE_MAJOR_VERSION >= 2 )) && (( $APACHE_MINOR_VERSION >= 4 )); then
+  # We generate one that is compatible with both 2.2.x and 2.4+.
     DIRECTORY=$(cat << __EOT
 <Directory "$2">
     Options All
     AllowOverride All
-    Require all granted
+    <IfModule mod_authz_core.c>
+      Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+      Order allow,deny
+      Allow from all
+    </IfModule>
   </Directory>
 __EOT
     )
-  else
-    DIRECTORY=$(cat << __EOT
-<Directory "$2">
-    Options All
-    AllowOverride All
-    Order allow,deny
-    Allow from all
-  </Directory>
-__EOT
-    )
-  fi
 
   cat << __EOF >$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
 # Created $date
