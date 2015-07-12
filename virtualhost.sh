@@ -174,11 +174,16 @@ create_virtualhost()
     chown $USER $access_log $error_log
   fi
 
-  # The <Directory> directive is different for Apache 2.4+.
-  # Reference: http://httpd.apache.org/docs/2.4/upgrading.html
-  # We generate one that is compatible with both 2.2.x and 2.4+.
-    DIRECTORY=$(cat << __EOT
-<Directory "$2">
+  cat << __EOF >$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
+# Created $date
+<VirtualHost *:$APACHE_PORT>
+  DocumentRoot "$2"
+  ServerName $VIRTUALHOST
+  $SERVER_ALIAS
+
+  ScriptAlias /cgi-bin "$2/cgi-bin"
+
+  <Directory "$2">
     Options All
     AllowOverride All
     <IfModule mod_authz_core.c>
@@ -189,19 +194,6 @@ create_virtualhost()
       Allow from all
     </IfModule>
   </Directory>
-__EOT
-    )
-
-  cat << __EOF >$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
-# Created $date
-<VirtualHost *:$APACHE_PORT>
-  DocumentRoot "$2"
-  ServerName $VIRTUALHOST
-  $SERVER_ALIAS
-
-  ScriptAlias /cgi-bin "$2/cgi-bin"
-
-  $DIRECTORY
 
   ${log}CustomLog "${access_log}" combined
   ${log}ErrorLog "${error_log}"
