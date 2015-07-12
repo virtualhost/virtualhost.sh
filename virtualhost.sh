@@ -870,7 +870,8 @@ if [ -z "$FOLDER" ]; then
       while : ; do
         if [ -z "$FOLDER" ]; then
           /bin/echo -n "  - Enter new folder name (located in $DOC_ROOT_PREFIX): "
-          read FOLDER
+          read response
+          FOLDER=$DOC_ROOT_PREFIX/$response
         else
           break
         fi
