@@ -535,7 +535,7 @@ fi
 if ! checkyesno ${SKIP_DOCUMENT_ROOT_CHECK} ; then
   if ! grep -q -e "^DocumentRoot \"$DOC_ROOT_PREFIX\"" $APACHE_CONFIG/httpd.conf ; then
     /bin/echo "httpd.conf's DocumentRoot does not point where it should."
-    /bin/echo -n "Do you with to set it to $DOC_ROOT_PREFIX? [Y/n]: "
+    /bin/echo -n "Do you wish to set it to $DOC_ROOT_PREFIX? [Y/n]: "
     if [ -z $BATCH_MODE ]; then
       read response
     else
