@@ -307,6 +307,18 @@ version_check()
   fi
 }
 
+setup_httpdconf()
+{
+  if ! grep -q -E "^Include $APACHE_CONFIG/virtualhosts" $APACHE_CONFIG/httpd.conf ; then
+    if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
+      mkdir $APACHE_CONFIG/virtualhosts
+      create_virtualhost localhost $DOC_ROOT_PREFIX
+    fi
+
+    /bin/echo "Include $APACHE_CONFIG/virtualhosts" >> $APACHE_CONFIG/httpd.conf
+  fi
+}
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Get the Apache version number to check compatibility.
@@ -526,7 +538,7 @@ fi
 # If it's not, we will:
 #
 # a) Backup the original to $APACHE_CONFIG/httpd.conf.original
-# b) Add a NameVirtualHost 127.0.0.1 line
+# b) Add a NameVirtualHost 127.0.0.1 line (for Apache < 2.4.x only)
 # c) Create $APACHE_CONFIG/virtualhosts/ (virtualhost definition files reside here)
 # d) Add a line to include all files in $APACHE_CONFIG/virtualhosts/
 # e) Create a _localhost file for the default "localhost" virtualhost
@@ -564,21 +576,17 @@ __EOT
   fi
 fi
 
-if ! grep -q -E "^NameVirtualHost \*:$APACHE_PORT" $APACHE_CONFIG/httpd.conf ; then
+if (( $APACHE_MAJOR_VERSION == 2 && $APACHE_MINOR_VERSION < 4 )); then
+  if ! grep -q -E "^NameVirtualHost \*:$APACHE_PORT" $APACHE_CONFIG/httpd.conf ; then
+    /bin/echo "httpd.conf not ready for virtual hosting. Fixing..."
+    cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
+    /bin/echo "NameVirtualHost *:$APACHE_PORT" >> $APACHE_CONFIG/httpd.conf
 
-  /bin/echo "httpd.conf not ready for virtual hosting. Fixing..."
-  cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
-  /bin/echo "NameVirtualHost *:$APACHE_PORT" >> $APACHE_CONFIG/httpd.conf
-
-  if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
-    mkdir $APACHE_CONFIG/virtualhosts
-    create_virtualhost localhost $DOC_ROOT_PREFIX
+    setup_httpdconf
   fi
-
-  /bin/echo "Include $APACHE_CONFIG/virtualhosts"  >> $APACHE_CONFIG/httpd.conf
-
+else
+  setup_httpdconf
 fi
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Look for hosts created in Tiger
