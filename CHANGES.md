@@ -1,4 +1,4 @@
-### 2.0.0.beta1
+### 2.0.0.beta2
 = Make 'sudo' optional
 - Move sudo check below variable declarations
 - Make compatible with homebrew httpd install
@@ -6,6 +6,7 @@
 - Add Apache version check to check compatibility
 - Add RESTART apache as variable
 - Add TEMPLATE_FILE_PATH for <virtualhost> configuration - previously hardcode in script
+- Add MIT license
 
 ### 1.35
 

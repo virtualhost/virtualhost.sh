@@ -2,12 +2,14 @@
 #================================================================================
 # virtualhost.sh 2.0.0
 #
+# License: MIT
+#
 # A fancy little script to manage virtualhosts on Mac OS X.
 #
 # For usage help and available commands run `virtualhost.sh`.
 #================================================================================
 # Don't change this!
-version="2.0.0.beta1"
+version="2.0.0.beta2"
 #
 
 CUR_USER=`whoami`;
