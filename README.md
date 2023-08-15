@@ -14,6 +14,7 @@ See the [wiki](https://github.com/virtualhost/virtualhost.sh/wiki/_pages)
 
 ## Maintainers
 
+* [Jeff Shields (kitsguru)](https://github.com/kitsguru)
 * [Scott Reeves (Cottser)](https://github.com/Cottser)
 * [Patrick Gibson (pgib)](https://github.com/pgib)
 

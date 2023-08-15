@@ -1,3 +1,12 @@
+### 2.0.0.beta1
+= Make 'sudo' optional
+- Move sudo check below variable declarations
+- Make compatible with homebrew httpd install
+    + does not require sudo
+- Add Apache version check to check compatibility
+- Add RESTART apache as variable
+- Add TEMPLATE_FILE_PATH for <virtualhost> configuration - previously hardcode in script
+
 ### 1.35
 
 - Added support for IPv6 default local address ::1, thanks [@davereid](https://github.com/davereid).

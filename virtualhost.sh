@@ -1,33 +1,19 @@
 #!/bin/sh
 #================================================================================
-# virtualhost.sh 1.35
+# virtualhost.sh 2.0.0
 #
 # A fancy little script to manage virtualhosts on Mac OS X.
 #
 # For usage help and available commands run `virtualhost.sh`.
 #================================================================================
 # Don't change this!
-version="1.35"
+version="2.0.0.beta1"
 #
 
-# No point going any farther if we're not running correctly...
-if [ `whoami` != 'root' -a "$1" -a "$1" != "--list" ]; then
-  read -d '' prompt <<- EOT
-virtualhost.sh requires super-user privileges to work.
-Enter your password to continue...
-Password:
-EOT
-
-  sudo -E -p "$prompt" "$0" $* || exit 1
-  exit 0
-fi
-
-if [ "$SUDO_USER" = "root" -a "$1" -a "$1" != "--list" ]; then
-  /bin/echo "You must start this under your regular user account (not root) using sudo."
-  /bin/echo "Rerun using: sudo $0 $*"
-  exit 1
-fi
-
+CUR_USER=`whoami`;
+echo "Virtualhost version: $version"
+BASEDIR=$(dirname "$0")
+echo "Script directory: $BASEDIR"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If you are using this script on a production machine with a static IP address,
 # and you wish to set up a "live" virtualhost, you can change the following IP
@@ -42,10 +28,17 @@ fi
 #
 #DOC_ROOT_PREFIX="/Library/WebServer/Documents"
 
-# Configure the apache-related paths
-#
+# Configure the apache-related paths (apple default install)
+# suggest that these be set in ~/.virtualhost.sh.conf
 : ${APACHE_CONFIG:="/private/etc/apache2"}
 : ${APACHECTL:="/usr/sbin/apachectl"}
+: ${RESTART:="/usr/sbin/apachectl"}
+
+# If using brew httpd - these paths are different
+# for ventura, /opt/homebrew/bin/httpd
+#: ${APACHE_CONFIG:="/opt/homebrew/etc/httpd"}
+#: ${RESTART:="brew services restart httpd"}
+
 
 # If you wish to change the default application that gets launched after the
 # virtual host is created, define it here:
@@ -97,6 +90,12 @@ fi
 
 # If Apache works on a different port than the default 80, set it here
 : ${APACHE_PORT:="80"}
+# If Apache works on a different port than the default 443 for SSL, set it here
+: ${APACHE_PORT_SSL:="443"}
+
+# If your server has SSL certificates in another location/name, set it here
+: ${SSLCertificateFile:="/opt/homebrew/etc/httpd/server.crt"}
+: ${SSLCertificateKeyFile:="/opt/homebrew/etc/httpd/server.key"}
 
 # Batch mode (all prompting will assume Yes). Any value will activate this. Can
 # be set here, in ~/.virtualhost.sh.conf, or on the command line, like:
@@ -120,11 +119,49 @@ fi
 # is not already present.
 : ${CREATE_INDEX:="yes"}
 
+# make sudo optional
+# set to no if using brew httpd
+# set to yes if using Macos apache
+: ${REQUIRE_SUDO:="no"}
+
+# copy the template sample to your home directory
+#: ${TEMPLATE_FILE_PATH:="~/.virtualhost.sh/template.sh"}
+: ${TEMPLATE_FILE_PATH:="$BASEDIR/template.sh"}
+
 # You can now store your configuration directions in a ~/.virtualhost.sh.conf
 # file so that you can download new versions of the script without having to
 # redo your own settings.
 if [ -e ~/.virtualhost.sh.conf ]; then
   . ~/.virtualhost.sh.conf
+fi
+
+
+if [ "$REQUIRE_SUDO" = "yes" ]; then
+# No point going any farther if we're not running correctly...
+  if [ `whoami` != 'root' -a "$1" -a "$1" != "--list" ]; then
+    read -d '' prompt <<- EOT
+  virtualhost.sh requires super-user privileges to work.
+  Enter your password to continue...
+  Password:
+EOT
+
+    sudo -E -p "$prompt" "$0" $* || exit 1
+    exit 0
+  fi
+
+  if [ "$SUDO_USER" = "root" -a "$1" -a "$1" != "--list" ]; then
+    /bin/echo "You must start this under your regular user account (not root) using sudo."
+    /bin/echo "Rerun using: sudo $0 $*"
+    exit 1
+  fi
+else
+  echo "$CUR_USER requires sudo: $REQUIRE_SUDO"
+fi
+
+# make sure template file exists
+if [ ! -e "$TEMPLATE_FILE_PATH" ]; then
+    echo "Can't find template file '$TEMPLATE_FILE_PATH' ... aborting"
+    exit 1
 fi
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -178,32 +215,13 @@ create_virtualhost()
     chown $USER $access_log $error_log
   fi
 
-  cat << __EOF >$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
-# Created $date
-<VirtualHost *:$APACHE_PORT>
-  DocumentRoot "$2"
-  ServerName $VIRTUALHOST
-  $SERVER_ALIAS
+# copy template into virtual host file
+# @TODO move to template variable in ~/.virtualhost.sh.conf
+#
+echo "$TEMPLATE_FILE_PATH"
+. "$TEMPLATE_FILE_PATH"
+echo "$TEMPLATE" >$APACHE_CONFIG/virtualhosts/$VIRTUALHOST
 
-  ScriptAlias /cgi-bin "$2/cgi-bin"
-
-  <Directory "$2">
-    Options All
-    AllowOverride All
-    <IfModule mod_authz_core.c>
-      Require all granted
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-      Order allow,deny
-      Allow from all
-    </IfModule>
-  </Directory>
-
-  ${log}CustomLog "${access_log}" combined
-  ${log}ErrorLog "${error_log}"
-
-</VirtualHost>
-__EOF
 }
 
 edit_virtualhost()
@@ -226,7 +244,8 @@ cleanup()
 restart_apache()
 {
   /bin/echo -n "+ Restarting Apache... "
-  $APACHECTL graceful 1>/dev/null 2>/dev/null
+  # $APACHECTL graceful 1>/dev/null 2>/dev/null
+  $RESTART
   /bin/echo "done"
 }
 
@@ -307,11 +326,22 @@ version_check()
   fi
 }
 
+setup_httpdconf()
+{
+  if ! grep -q -E "^Include $APACHE_CONFIG/virtualhosts" $APACHE_CONFIG/httpd.conf ; then
+    if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
+      mkdir $APACHE_CONFIG/virtualhosts
+      create_virtualhost localhost $DOC_ROOT_PREFIX
+    fi
+    /bin/echo "Include $APACHE_CONFIG/virtualhosts" >> $APACHE_CONFIG/httpd.conf
+  fi
+}
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Get the Apache version number to check compatibility.
 APACHE_VERSION=$(${APACHECTL} -v | perl -ne 'print $1 if /Apache\/([0-9.]+)/')
-
+# echo "$APACHE_VERSION"
+#
 # Extract the major, minor, and patch numbers from the Apache version for
 # easier version comparisons.
 IFS='.'
@@ -319,7 +349,8 @@ read APACHE_MAJOR_VERSION APACHE_MINOR_VERSION APACHE_PATCH_VERSION <<< "$APACHE
 unset IFS
 
 # Check for Apache 2.x.
-if (( $APACHE_MAJOR_VERSION < 2 )); then
+echo "apache version $APACHE_MAJOR_VERSION.$APACHE_MINOR_VERSION.$APACHE_PATCH_VERSION "
+if [[ "$APACHE_MAJOR_VERSION" < "2" ]] ; then
   /bin/echo "Could not find ${APACHE_CONFIG}"
   /bin/echo "Sorry, this version of virtualhost.sh only works with Leopard. You can download an older version which works with previous versions of Mac OS X here:"
   /bin/echo
@@ -458,7 +489,7 @@ if [ ! -z $DELETE ]; then
     /bin/echo "done"
   fi
 
-  if [ -e $APACHE_CONFIG/virtualhosts/$VIRTUALHOST ]; then
+  if [[ -e ${APACHE_CONFIG/virtualhosts/$VIRTUALHOST} ]]; then
     DOCUMENT_ROOT=`grep DocumentRoot $APACHE_CONFIG/virtualhosts/$VIRTUALHOST | awk '{print $2}' | tr -d '"'`
 
     if [ -d $DOCUMENT_ROOT ]; then
@@ -526,7 +557,7 @@ fi
 # If it's not, we will:
 #
 # a) Backup the original to $APACHE_CONFIG/httpd.conf.original
-# b) Add a NameVirtualHost 127.0.0.1 line
+# b) Add a NameVirtualHost 127.0.0.1 line (for Apache < 2.4.x only)
 # c) Create $APACHE_CONFIG/virtualhosts/ (virtualhost definition files reside here)
 # d) Add a line to include all files in $APACHE_CONFIG/virtualhosts/
 # e) Create a _localhost file for the default "localhost" virtualhost
@@ -564,18 +595,17 @@ __EOT
   fi
 fi
 
-if ! grep -q -E "^NameVirtualHost \*:$APACHE_PORT" $APACHE_CONFIG/httpd.conf ; then
+if [[ "$APACHE_MAJOR_VERSION" == "2" && "$APACHE_MINOR_VERSION" < "4" ]]; then
+  if ! grep -q -E "^NameVirtualHost \*:$APACHE_PORT" $APACHE_CONFIG/httpd.conf ; then
 
-  /bin/echo "httpd.conf not ready for virtual hosting. Fixing..."
-  cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
-  /bin/echo "NameVirtualHost *:$APACHE_PORT" >> $APACHE_CONFIG/httpd.conf
+    /bin/echo "httpd.conf not ready for virtual hosting. Fixing..."
+    cp $APACHE_CONFIG/httpd.conf $APACHE_CONFIG/httpd.conf.original
+    /bin/echo "NameVirtualHost *:$APACHE_PORT" >> $APACHE_CONFIG/httpd.conf
 
-  if [ ! -d $APACHE_CONFIG/virtualhosts ]; then
-    mkdir $APACHE_CONFIG/virtualhosts
-    create_virtualhost localhost $DOC_ROOT_PREFIX
+    setup_httpdconf
   fi
-
-  /bin/echo "Include $APACHE_CONFIG/virtualhosts"  >> $APACHE_CONFIG/httpd.conf
+else
+  setup_httpdconf
 
 fi
 
