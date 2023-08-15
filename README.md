@@ -1,6 +1,15 @@
+# V2
+
+Beta 1
+
+Update to Ventura (Macos 13.x) compatibility with homebrew httpd
+Backward compatible with 1.35
+
+See [Changes.md](https://github.com/virtualhost/virtualhost.sh/blob/2.x/CHANGES.md)
+
 ## Downloading
 
-You can grab the [script here](https://github.com/virtualhost/virtualhost.sh/raw/master/virtualhost.sh) (Option-click to download.)
+You can grab the [script here](https://raw.githubusercontent.com/virtualhost/virtualhost.sh/2.x/virtualhost.sh) (Option-click to download.)
 
 You'll need to `chmod a+x virtualhost.sh` in order to run it after downloading.
 
